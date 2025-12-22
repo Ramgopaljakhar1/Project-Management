@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "469259197243",
+    "project_id": "project-management-b7306",
+    "storage_bucket": "project-management-b7306.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:469259197243:android:1040a3dc0489e95b5ab51e",
+        "android_client_info": {
+          "package_name": "com.app.projectmanagement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXzjvongJErm01GadU7iu5AoSkaL7ein8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
