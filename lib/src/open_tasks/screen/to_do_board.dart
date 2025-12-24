@@ -1706,6 +1706,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                                   TextFormField(
                                     controller: estimatedHoursController,
                                     keyboardType: TextInputType.number,
+                                    maxLength: 2,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
@@ -1717,6 +1718,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                                       return null;
                                     },
                                     decoration: InputDecoration(
+                                      counterText: '',
                                       // suffix: Text(
                                       //   'Hours',
                                       //   style: GoogleFonts.lato(

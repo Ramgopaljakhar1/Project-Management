@@ -236,7 +236,7 @@ class _NotificationsState extends State<Notifications> {
       _navigateToTaskCompletedScreen(context, taskId);
     } else if (_isAssignedOrAssignerUser(message)) {
       print('✅ User is ASSIGNEE or ASSIGNER - Navigating to ViewMyTaskScreen');
-      _navigateToViewMyTaskScreen(context, taskId);
+      _navigateToViewMyTaskScreen(context, taskId,notif);
     } else {
       print('⚠️ Could not determine user role - Defaulting to TaskCompletedScreen');
       _navigateToTaskCompletedScreen(context, taskId);
@@ -274,13 +274,14 @@ class _NotificationsState extends State<Notifications> {
   }
 
   /// Navigate to ViewMyTaskScreen
-  void _navigateToViewMyTaskScreen(BuildContext context, dynamic taskId) {
+  void _navigateToViewMyTaskScreen(BuildContext context, dynamic taskId,Map<String, dynamic> notif) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ViewMyTaskScreen(
           taskData: {
             'id': taskId,
+            'assign_to_remark': notif['assign_to_remark'] ?? '',
           },
           source: 'notifications',
           showEditButton: true,
@@ -340,7 +341,7 @@ class _NotificationsState extends State<Notifications> {
         parsedMessage['isTaskCompleted']) {
       // User is assignee, assigner, or task owner
       print('📋 Assignee/Assigner - Going to ViewMyTaskScreen');
-      _navigateToViewMyTaskScreen(context, taskId);
+      _navigateToViewMyTaskScreen(context, taskId,notif);
     } else {
       // Default case - check if we have additional data
       if (notif.containsKey('user_role')) {
@@ -349,7 +350,7 @@ class _NotificationsState extends State<Notifications> {
         if (userRole == 'tagged' || userRole == 'mentioned') {
           _navigateToTaskCompletedScreen(context, taskId);
         } else if (userRole == 'assignee' || userRole == 'assigner') {
-          _navigateToViewMyTaskScreen(context, taskId);
+          _navigateToViewMyTaskScreen(context, taskId,notif);
         } else {
           _navigateToTaskCompletedScreen(context, taskId); // Default
         }
@@ -413,7 +414,7 @@ class _NotificationsState extends State<Notifications> {
     } else if (currentUserId == assignedById || currentUserId == assignedToId) {
       // User assigned the task OR user was assigned the task
       print('✅ User is ASSIGNER or ASSIGNEE - Navigating to ViewMyTaskScreen');
-      _navigateToViewMyTaskScreen(context, taskId);
+      _navigateToViewMyTaskScreen(context, taskId,notif);
     } else {
       // Fallback - use message parsing
       _handleNotificationTap(notif, context);

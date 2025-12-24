@@ -421,6 +421,11 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
   }
 
   void _initializeDataFromTask() {
+   final taskcontroller = Provider.of<ViewMyTaskController>(
+      context,
+      listen: false,
+    );
+
     if (widget.taskData['actual_est_start_date'] != null &&
         widget.taskData['actual_est_end_date'] != null) {
       try {
@@ -437,11 +442,24 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
     }
 
     // FIX: Always update the remark controller with current data
-    if (widget.taskData['assign_to_remark'] != null) {
+    if (widget.taskData['assign_to_remark'] != null &&
+        widget.taskData['assign_to_remark'].toString().isNotEmpty) {
+
+      // ✅ 1️⃣ Widget se remark mila → wahi show karo
       remark.text = widget.taskData['assign_to_remark'].toString();
+
+    } else if (taskcontroller.task?['assign_to_remark'] != null &&
+        taskcontroller.task!['assign_to_remark'].toString().isNotEmpty) {
+
+      // ✅ 2️⃣ Widget se nahi mila → task list se show karo
+      remark.text = taskcontroller.task!['assign_to_remark'].toString();
+
     } else {
-      remark.clear(); // Clear if no remark exists
+
+      // ✅ 3️⃣ Dono jagah se nahi mila → clear
+      remark.clear();
     }
+
   }
 
   Future<Uint8List?> _downloadFileFromUrl(String url) async {
@@ -507,7 +525,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
         final task = controller.task;
       //  debugPrint('task docs re : ${task!["task_docs_re"]}');
         _uploadedFiles_re = task!["task_docs_re"];
+
         debugPrint('task docs re-- : ${_uploadedFiles_re}');
+        debugPrint('assign_to_remark-- : ${ task["assign_to_remark"]}');
         if (task == null) {
           return Scaffold(
             backgroundColor: AppColors.white,
@@ -1509,10 +1529,12 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                               TextFormField(
                                 controller: actualHoursController,
                                 keyboardType: TextInputType.number,
+                                maxLength: 2,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
                                 decoration: InputDecoration(
+                                  counterText: '',
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 14,
                                     horizontal: 16,

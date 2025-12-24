@@ -1642,6 +1642,7 @@ class _HomeState extends State<Home>
                                   TextFormField(
                                     controller: estimatedHoursController,
                                     keyboardType: TextInputType.number,
+                                    maxLength: 2,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
@@ -1653,6 +1654,7 @@ class _HomeState extends State<Home>
                                       return null;
                                     },
                                     decoration: InputDecoration(
+                                      counterText: '',
                                       contentPadding:
                                       const EdgeInsets.symmetric(
                                         vertical: 14,

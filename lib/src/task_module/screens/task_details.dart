@@ -2030,12 +2030,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               TextFormField(
                                 controller: estimatedHoursController,
                                 keyboardType: TextInputType.number,
+                                maxLength: 2,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
 
                                 decoration: InputDecoration(
-
+                                  counterText: '',
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 14,
                                     horizontal: 16,
