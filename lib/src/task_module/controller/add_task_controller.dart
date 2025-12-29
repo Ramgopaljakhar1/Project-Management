@@ -191,6 +191,7 @@ class AddTaskController extends ChangeNotifier {
                 'Authorization': 'Bearer $token',
                 'Content-Type': 'application/json',
               },
+
             );
 
             debugPrint('API response: $response');
