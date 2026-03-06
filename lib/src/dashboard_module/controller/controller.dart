@@ -109,10 +109,12 @@ class DashboardController extends ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> priority() async {
-    final Uri url = Uri.parse(
-      'http://210.89.42.219:8083/api/lookup-det/by-code/SEV/',
-    );
 
+    // final Uri url = Uri.parse(
+    //   'http://210.89.42.219:8083/api/lookup-det/by-code/SEV/',
+    // );
+    final Uri url = Uri.parse(ApiConstants.baseUrl + ApiConstants.Priority);
+    debugPrint("🌐 Priority API URL: $url");
     try {
       final response = await http.get(
         url,

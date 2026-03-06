@@ -109,8 +109,6 @@ class _ToDoBoardState extends State<ToDoBoard>
   List<Map<String, dynamic>> userList = [];
   DashboardController? dashboardController;
   AddTaskController? addTaskController;
-  TaskDetailController?
-  _taskDetailController; // Changed to avoid name collision
 
   // Track current step in the form flow
   int _currentFormStep = 0;
@@ -130,19 +128,6 @@ class _ToDoBoardState extends State<ToDoBoard>
       _updateConnectionStatus,
     );
     _loadUserData().then((_) {
-      dashboardController = Provider.of<DashboardController>(
-        context,
-        listen: false,
-      );
-      addTaskController = Provider.of<AddTaskController>(
-        context,
-        listen: false,
-      );
-      _taskDetailController = Provider.of<TaskDetailController>(
-        context,
-        listen: false,
-      );
-
       if (token != null) {
         final controller = Provider.of<AddTaskController>(
           context,
@@ -295,8 +280,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                   ? customAppBar(
                     context,
                     title: 'Open Task Screen',
-                    showBack: true,
-                    showLogo: false,
+                    showBack: true,showLogo: false
                   )
                   : null,
           body: RefreshIndicator(
@@ -316,6 +300,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                       ),
             ),
           ),
+
         )
         : InternetIssue(
           onRetryPressed: () async {
@@ -1040,7 +1025,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                                                     'Task created successfully',
                                                   );
 
-                                                  // await _refreshTasks();
+                                                 // await _refreshTasks();
                                                   // Navigator.pushReplacementNamed(
                                                   //   context,
                                                   //   '/home',
@@ -1391,9 +1376,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                                 onPressed: () {
                                   //
                                   final description =
-                                      dashboardController
-                                          .detailsController
-                                          .text;
+                                      dashboardController.detailsController.text;
                                   final selectedProject =
                                       dashboardController.selectedProjectName;
                                   //  final selectedPriority = dashboardController.selectedPriority;
@@ -1449,12 +1432,8 @@ class _ToDoBoardState extends State<ToDoBoard>
                                   //   return;
                                   // }
 
-                                  if (dashboardController.selectedPriority ==
-                                      null) {
-                                    CustomSnackBar.errorSnackBar(
-                                      context,
-                                      "Please select a priority/severity",
-                                    );
+                                  if (dashboardController.selectedPriority == null) {
+                                    CustomSnackBar.errorSnackBar(context, "Please select a priority/severity");
                                     return;
                                   }
                                   Navigator.pop(context);
@@ -1693,7 +1672,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                                             ),
                                           ],
                                         ),
-                                      ),
+                                      )
                                     ],
                                   ),
                                   const SizedBox(height: 16),
@@ -1745,7 +1724,7 @@ class _ToDoBoardState extends State<ToDoBoard>
                                             ),
                                           ],
                                         ),
-                                      ),
+                                      )
                                     ],
                                   ),
                                   SizedBox(height: 7),
@@ -1909,31 +1888,78 @@ class _ToDoBoardState extends State<ToDoBoard>
                               bottomButton(
                                 title: 'Next',
                                 subtitle: 'Back',
-                                icon: Icons.arrow_forward,
-                                icons: Icons.arrow_back,
+                                icon: Icons.check,
+                                icons: Icons.clear,
+
                                 onPress: () {
-                                  if (_rangeStart == null) {
-                                    CustomSnackBar.errorSnackBar(
-                                      context,
-                                      "Please select date range",
-                                    );
-                                    return;
-                                  }
-                                  if (estimatedHoursController.text.isEmpty) {
-                                    CustomSnackBar.errorSnackBar(
-                                      context,
-                                      "Please enter estimated hours",
-                                    );
-                                    return;
-                                  }
                                   if (_formKey.currentState!.validate()) {
-                                    _updateRangeText();
+                                    // 🔹 Step 1: check Start Date
+                                    if (rangeStart == null) {
+                                      showDialog(
+                                        context: context,
+                                        builder:
+                                            (context) => AlertDialog(
+                                              title: const Text(
+                                                "Missing Information",
+                                              ),
+                                              content: const Text(
+                                                "Please select a Start Date before proceeding.",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text("OK"),
+                                                ),
+                                              ],
+                                            ),
+                                      );
+                                      return;
+                                    }
+                                    // 🔹 Step 2: check End Date
+                                    if (rangeEnd == null) {
+                                      showDialog(
+                                        context: context,
+                                        builder:
+                                            (context) => AlertDialog(
+                                              title: const Text(
+                                                "Missing Information",
+                                              ),
+                                              content: const Text(
+                                                "Please select an End Date before proceeding.",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text("OK"),
+                                                ),
+                                              ],
+                                            ),
+                                      );
+                                      return;
+                                    }
+
+                                    // ✅ Step 3: All validation passed → Save Data
+                                    print("🔽 Submitted Data:");
+                                    print(
+                                      "📅 Start Range: ${rangeStart?.toIso8601String()}",
+                                    );
+                                    print(
+                                      "📅 End Range: ${rangeEnd?.toIso8601String()}",
+                                    );
+                                    print(
+                                      "⏱ Estimated Hours: ${estimatedHoursController.text}",
+                                    );
+
                                     final dateTimeModel = TaskDateTimeModel(
-                                      date: _rangeStart ?? DateTime.now(),
+                                      date: rangeStart ?? DateTime.now(),
                                       time: selectedTime,
                                       repeatText: repeatSummary,
-                                      rangeStart: _rangeStart,
-                                      rangeEnd: _rangeEnd,
+                                      rangeStart: rangeStart,
+                                      rangeEnd: rangeEnd,
                                       estimatedHours:
                                           estimatedHoursController.text,
                                     );
@@ -1946,31 +1972,29 @@ class _ToDoBoardState extends State<ToDoBoard>
                                         dateTimeModel,
                                       );
                                     }
-
+                                    //
                                     Navigator.pop(context);
                                     _isDateTimeSheetOpen = false;
                                     _currentFormStep = 3;
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                          _showAssignToBottomSheet(
-                                            parentContext,
-                                          );
-                                        });
+
+                                    // ✅ Open AssignTo bottom sheet after this sheet is closed
+                                    Future.delayed(Duration.zero, () {
+                                      _showAssignToBottomSheet(
+                                        parentContext,
+                                      ); // parentContext = the context of your screen
+                                    });
                                   }
                                 },
+
                                 onTap: () {
                                   Navigator.pop(context);
                                   _isDateTimeSheetOpen = false;
                                   _currentFormStep = 1;
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    _showDescriptionBottomSheet(
-                                      parentContext,
-                                      dashboardController!,
-                                      _taskDetailController!,
-                                    );
-                                  });
+                                  _showDescriptionBottomSheet(
+                                    context,
+                                    dashboardController!,
+                                    taskDetailController!,
+                                  );
                                 },
                               ),
                               SizedBox(height: 45),
@@ -2127,21 +2151,21 @@ class _ToDoBoardState extends State<ToDoBoard>
                                             color: AppColors.black,
                                           ),
                                           const SizedBox(width: 7),
-                                          RichText(
-                                            text: TextSpan(
+                                          Text.rich(
+                                            TextSpan(
                                               text: 'Assign To ',
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
                                                 color: AppColors.black,
                                               ),
-                                              children: const [
+                                              children: [
                                                 TextSpan(
                                                   text: '*',
                                                   style: TextStyle(
                                                     color: Colors.red,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
                                               ],

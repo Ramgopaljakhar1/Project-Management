@@ -12,6 +12,7 @@ import '../../dashboard_module/controller/controller.dart';
 import '../../utils/img.dart';
 import '../../utils/string.dart';
 
+
 Widget addDescriptionCollapse({
   required VoidCallback onPress,
   required bool isExpanded,
@@ -47,10 +48,7 @@ Widget addDescriptionCollapse({
   bool showDropdownForProjectName = true,
   required BuildContext context,
 }) {
-  final dashboardController = Provider.of<DashboardController>(
-    context,
-    listen: false,
-  );
+  final dashboardController = Provider.of<DashboardController>(context, listen: false);
   final priorityDisplayMap = {
     'sst': 'Showstopper',
     'crit': 'Critical',
@@ -62,8 +60,7 @@ Widget addDescriptionCollapse({
 
   debugPrint('🔘 Current Selected Priority: $selectedPriority');
   // Map the API values to display names
-  final currentDisplayName =
-      priorityDisplayMap[selectedPriority?.toLowerCase() ?? ''] ??
+  final currentDisplayName = priorityDisplayMap[selectedPriority?.toLowerCase() ?? ''] ??
       (selectedPriority?.isNotEmpty == true ? selectedPriority : 'Not Set');
   debugPrint('🔄 Mapped Priority: $currentDisplayName');
   debugPrint('📋 Available Priorities from Mapping:');
@@ -109,8 +106,7 @@ Widget addDescriptionCollapse({
                       text: '*',
                       style: TextStyle(
                         color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 19,
+                        fontWeight: FontWeight.bold,fontSize: 19
                       ),
                     ),
                   ],
@@ -236,19 +232,18 @@ Widget addDescriptionCollapse({
                         ),
                       ],
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
             DropdownSearch<Map<String, dynamic>>(
               items: (filter, loadProps) => projectList,
-              selectedItem:
-                  selectedProject != null && selectedProject.isNotEmpty
-                      ? projectList.firstWhere(
-                        (p) => p['name'] == selectedProject,
-                        orElse: () => {},
-                      )
-                      : null,
+              selectedItem: selectedProject != null && selectedProject.isNotEmpty
+                  ? projectList.firstWhere(
+                    (p) => p['name'] == selectedProject,
+                orElse: () => {},
+              )
+                  : null,
               itemAsString: (item) => item['name'] ?? '',
               compareFn: (item1, item2) => item1['id'] == item2['id'],
               onChanged: (value) {
@@ -264,9 +259,7 @@ Widget addDescriptionCollapse({
                 modalBottomSheetProps: ModalBottomSheetProps(
                   backgroundColor: Colors.white,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                 ),
                 searchFieldProps: TextFieldProps(
@@ -283,13 +276,14 @@ Widget addDescriptionCollapse({
               decoratorProps: DropDownDecoratorProps(
                 decoration: InputDecoration(
                   hintText: "Select Project",
-                  hintStyle: TextStyle(fontSize: 14, color: AppColors.gray),
+                  hintStyle:TextStyle(fontSize: 14, color:AppColors.gray),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
             ),
+
 
             /// ✅ Upload File Section
             GestureDetector(
@@ -390,12 +384,9 @@ Widget addDescriptionCollapse({
               ),
 
             /// ✅ Priority Section
-            if (showPrioritySection)
+            if(showPrioritySection)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 0.0,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -435,101 +426,82 @@ Widget addDescriptionCollapse({
                     ),
                     const SizedBox(height: 12),
                     Row(
-                      children:
-                          ['Showstopper', 'Critical', 'Minor'].map((priority) {
-                            final isSelected = currentDisplayName == priority;
-                            debugPrint(
-                              '🔘 Priority: $priority | Selected: $isSelected',
-                            );
+                      children: ['Showstopper', 'Critical', 'Minor'].map((priority) {
+                        final isSelected = currentDisplayName == priority;
+                        debugPrint('🔘 Priority: $priority | Selected: $isSelected');
 
-                            return Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () {
-                                  // Find the corresponding API value
-                                  final apiValue =
-                                      priorityDisplayMap.entries
-                                          .firstWhere(
-                                            (entry) => entry.value == priority,
-                                            orElse: () => MapEntry('', ''),
-                                          )
-                                          .key;
+                        return Expanded(
+                          child: GestureDetector(
+                              onTap: () {
+                                // Find the corresponding API value
+                                final apiValue = priorityDisplayMap.entries
+                                    .firstWhere(
+                                      (entry) => entry.value == priority,
+                                  orElse: () => MapEntry('', ''),
+                                )
+                                    .key;
 
-                                  if (apiValue.isNotEmpty) {
-                                    onPriorityChange(apiValue);
-                                    dashboardController.selectPriority(
-                                      apiValue,
-                                    );
-                                  }
-                                },
-                                child: Row(
-                                  children: [
-                                    Radio<String>(
-                                      value: priority,
-                                      groupValue: currentDisplayName,
-                                      onChanged: (value) {
-                                        if (value != null) {
-                                          final apiValue =
-                                              priorityDisplayMap.entries
-                                                  .firstWhere(
-                                                    (entry) =>
-                                                        entry.value == value,
-                                                    orElse:
-                                                        () => MapEntry('', ''),
-                                                  )
-                                                  .key;
-                                          if (apiValue.isNotEmpty) {
-                                            onPriorityChange(apiValue);
-                                            dashboardController.selectPriority(
-                                              apiValue,
-                                            );
-                                          }
+                                if (apiValue.isNotEmpty) {
+                                  onPriorityChange(apiValue);
+                                  dashboardController.selectPriority(apiValue);
+                                }
+                              },
+                              child: Row(
+                                children: [
+                                  Radio<String>(
+                                    value: priority,
+                                    groupValue: currentDisplayName,
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        final apiValue = priorityDisplayMap.entries
+                                            .firstWhere(
+                                              (entry) => entry.value == value,
+                                          orElse: () => MapEntry('', ''),
+                                        )
+                                            .key;
+                                        if (apiValue.isNotEmpty) {
+                                          onPriorityChange(apiValue);
+                                          dashboardController.selectPriority(apiValue);
                                         }
-                                      },
-                                      activeColor: AppColors.appBar,
-                                    ),
-                                    Expanded(
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: priorityColors[priority],
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                        ),
-                                        child: FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8.0,
-                                            ),
-                                            child: Text(
-                                              priority,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                      }
+                                    },
+                                    activeColor: AppColors.appBar,
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: priorityColors[priority],
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                          child: Text(
+                                            priority,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            );
-                            ;
-                          }).toList(),
-                    ),
+                                  ),
+                                ],
+                              )
+                          ),
+                        );;
+                      }).toList(),
+                    )
                   ],
                 ),
               ),
             const SizedBox(height: 22),
-            if (showSubtitle!)
+            if(showSubtitle!)
               if (showSubtitle && subtitle != null && subtitle.isNotEmpty)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -545,14 +517,9 @@ Widget addDescriptionCollapse({
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color:
-                            priorityColors[currentDisplayName] ??
-                            Colors.grey.shade300,
+                        color: priorityColors[currentDisplayName] ?? Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -566,6 +533,9 @@ Widget addDescriptionCollapse({
                     ),
                   ],
                 ),
+
+
+
           ],
         ),
     ],
