@@ -156,7 +156,7 @@ class _TaskCompletedScreenState extends State<TaskCompletedScreen> {
         if (controller.isLoading) {
           return Scaffold(
             appBar: customAppBar(context, title: 'Loading...', showBack: true,showLogo: false),
-            body: Center(child: buildShimmerLoader()),
+            body: Center(child: viewTaskScreenShimmer(context)),
           );
         }
 

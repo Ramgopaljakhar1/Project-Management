@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../utils/animated_bell_icon.dart';
 import '../utils/img.dart';
@@ -22,10 +23,9 @@ Widget taskCard({
   bool showFavourite = true,
   EdgeInsetsGeometry? margin,
   EdgeInsetsGeometry? padding,
-  Color? favouriteIconColor,   // icon ka color
+  Color? favouriteIconColor, // icon ka color
   Color? favouriteBgColor,
   IconData? favouriteIcon,
-
 }) {
   return Container(
     margin: margin ?? const EdgeInsets.all(8),
@@ -35,13 +35,13 @@ Widget taskCard({
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color:Colors.black.withOpacity(0.2),
+          color: Colors.black.withOpacity(0.2),
           blurRadius: 6,
           offset: const Offset(0, -4), // top shadow
         ),
         BoxShadow(
           color: Colors.black.withOpacity(0.2),
-          blurRadius:6,
+          blurRadius: 6,
           offset: const Offset(0, 4), // bottom shadow
         ),
       ],
@@ -56,8 +56,10 @@ Widget taskCard({
             children: [
               if (priority != null)
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _getPriorityColor(priority),
                     borderRadius: BorderRadius.circular(4),
@@ -75,21 +77,26 @@ Widget taskCard({
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SvgPicture.asset(AppImages.addTaskSvg,
-                      width: 18, height: 18, color: Colors.black87),
-                  const SizedBox(width: 8,),
-                  const Text(
+                  SvgPicture.asset(
+                    AppImages.addTaskSvg,
+                    width: 18,
+                    height: 18,
+                    color: Colors.black87,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
                     'Task Name : ',
-                    style: TextStyle(
+                    style: GoogleFonts.lato(
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Color(0xFF333333),
+                      fontSize: 14,
                     ),
                   ),
                   Expanded(
                     child: Text(
                       taskName ?? 'No Task',
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.black87),
+                      style: GoogleFonts.lato(color: Color(0xFF666666),fontWeight:FontWeight.w600,fontSize: 14),
                     ),
                   ),
                 ],
@@ -106,19 +113,22 @@ Widget taskCard({
                       color: Colors.black87,
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Assigned Date : ',
-                      style: TextStyle(
+                      style: GoogleFonts.lato(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Color(0xFF333333),
                       ),
                     ),
-                    Expanded(   // 👈 This will prevent overflow
+                    Expanded(
+                      // 👈 This will prevent overflow
                       child: Text(
                         DateFormat('MMM dd, yyyy').format(assignedDate),
-                        style: const TextStyle(color: Colors.black87),
-                        overflow: TextOverflow.ellipsis, // 👈 optional, trims long text with ...
+                        style: GoogleFonts.lato(color: Color(0xFF666666),fontWeight:FontWeight.w600,fontSize: 14),
+                        overflow:
+                            TextOverflow
+                                .ellipsis, // 👈 optional, trims long text with ...
                       ),
                     ),
                   ],
@@ -129,19 +139,28 @@ Widget taskCard({
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SvgPicture.asset(AppImages.calendarSvg,
-                        width: 18, height: 18, color: Colors.black54),
+                    SvgPicture.asset(
+                      AppImages.calendarSvg,
+                      width: 18,
+                      height: 18,
+                      color: Colors.black54,
+                    ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Completed On : ',
-                      style: TextStyle(
+                      style: GoogleFonts.lato(
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Color(0xFF666666),
                       ),
                     ),
                     Text(
                       DateFormat('MMM dd, yyyy').format(completedDate),
-                      style: const TextStyle(color: Colors.black87),
+                      style: GoogleFonts.lato(
+                        color: Color(0xFF333333),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -149,20 +168,31 @@ Widget taskCard({
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SvgPicture.asset(AppImages.calendarSvg,
-                        width: 18, height: 18, color: Colors.black87),
+                    SvgPicture.asset(
+                      AppImages.calendarSvg,
+                      width: 18,
+                      height: 18,
+                      color: Colors.black87,
+                    ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Assigned To : ',
-                      style: TextStyle(
+                      style: GoogleFonts.lato(
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Color(0xFF333333),
+                        fontSize: 14,
                       ),
                     ),
                     Flexible(
                       child: Text(
-                        subTitle,overflow: TextOverflow.ellipsis,maxLines: 1,
-                        style: const TextStyle(color: Colors.black87),
+                        subTitle,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: GoogleFonts.lato(
+                          color: Color(0xFF666666),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -176,20 +206,25 @@ Widget taskCard({
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             // Task Status Badge (controlled by showTaskStatus)
-            if (showTaskStatus && taskStatus != null && taskStatusType != null) ...[
+            if (showTaskStatus &&
+                taskStatus != null &&
+                taskStatusType != null) ...[
               if (_taskStatusWidget(taskStatus, taskStatusType) != null)
                 _taskStatusWidget(taskStatus, taskStatusType)!,
             ],
 
             const SizedBox(height: 6),
             if (showBell)
-            //  _circleImageButton(Icons.notifications_active, onBellTap),
-            AnimatedBellIcon(onBellTap: onBellTap),
+              //  _circleImageButton(Icons.notifications_active, onBellTap),
+              AnimatedBellIcon(onBellTap: onBellTap),
             const SizedBox(height: 6),
             if (showFavourite)
-              _circleImageButton(favouriteIcon ?? Icons.star_border, removeFavourite,
-                  backgroundColor: favouriteBgColor ?? Color(0xFFFFFFFF),
-                iconColor: favouriteIconColor ?? Colors.black87),
+              _circleImageButton(
+                favouriteIcon ?? Icons.star_border,
+                removeFavourite,
+                backgroundColor: favouriteBgColor ?? Color(0xFFFFFFFF),
+                iconColor: favouriteIconColor ?? Colors.black87,
+              ),
 
             const SizedBox(height: 6),
             Align(
@@ -236,12 +271,7 @@ Widget? _taskStatusWidget(String status, String statusType) {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SvgPicture.asset(
-          iconPath!,
-          width: 16,
-          height: 16,
-          color: color,
-        ),
+        SvgPicture.asset(iconPath!, width: 16, height: 16, color: color),
         const SizedBox(width: 4),
         Text(
           status,
@@ -256,9 +286,12 @@ Widget? _taskStatusWidget(String status, String statusType) {
   );
 }
 
-
-Widget _circleImageButton(IconData iconData, VoidCallback? onPressed,
-    {Color? backgroundColor,Color? iconColor,}) {
+Widget _circleImageButton(
+  IconData iconData,
+  VoidCallback? onPressed, {
+  Color? backgroundColor,
+  Color? iconColor,
+}) {
   return Container(
     decoration: BoxDecoration(
       color: backgroundColor ?? Colors.blue[100],
@@ -270,7 +303,7 @@ Widget _circleImageButton(IconData iconData, VoidCallback? onPressed,
       borderRadius: BorderRadius.circular(100),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Icon(iconData, color:iconColor  ?? Colors.black87, size: 22),
+        child: Icon(iconData, color: iconColor ?? Colors.black87, size: 21),
       ),
     ),
   );

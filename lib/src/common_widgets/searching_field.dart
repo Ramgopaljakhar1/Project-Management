@@ -37,20 +37,22 @@ Widget searchingField({
         onTap: onTap,
         onChanged: onChanged,
         decoration: InputDecoration(
+
           hintStyle:TextStyle(color:  AppColors.black),
           hintText: hint ?? AppStrings.search,
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 5),
            // child: Image.asset(img ?? AppImages.search,color: AppColors.black,),
+
             child:Icon(Icons.search,color: AppColors.appBar,),
           ),
-          suffixIcon: Padding(
+          suffixIcon:searchController != null && searchController.text.isNotEmpty ? Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
               onPressed: onPress,
               icon: Icon(Icons.clear, color: AppColors.black),
             ),
-          ),
+          ) : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
             borderSide: BorderSide.none,

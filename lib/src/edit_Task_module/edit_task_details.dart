@@ -21,6 +21,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../assigned_to_team_module/screen/assigned_to_team_screen.dart';
 import '../common_widgets/appbar.dart';
 import '../common_widgets/common_bottom_button.dart';
+import '../common_widgets/common_shimmer_loader.dart';
 import '../common_widgets/common_text_lable_field.dart';
 import '../common_widgets/custom_snackbar.dart';
 import '../common_widgets/lodar.dart';
@@ -619,7 +620,7 @@ class _EditTaskDetailsState extends State<EditTaskDetails> {
           title: 'Edit Task Details',
           showBack: true,
         ),
-        body: Center(child: commonLoader(color: AppColors.black, size: 35)),
+        body: Center(child:buildEditTaskDetailsShimmer(context)),
       );
     }
 

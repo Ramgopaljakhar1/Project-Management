@@ -109,6 +109,8 @@ class _ToDoBoardState extends State<ToDoBoard>
   List<Map<String, dynamic>> userList = [];
   DashboardController? dashboardController;
   AddTaskController? addTaskController;
+  TaskDetailController?
+  _taskDetailController; // Changed to avoid name collision
 
   // Track current step in the form flow
   int _currentFormStep = 0;
@@ -128,6 +130,19 @@ class _ToDoBoardState extends State<ToDoBoard>
       _updateConnectionStatus,
     );
     _loadUserData().then((_) {
+      dashboardController = Provider.of<DashboardController>(
+        context,
+        listen: false,
+      );
+      addTaskController = Provider.of<AddTaskController>(
+        context,
+        listen: false,
+      );
+      _taskDetailController = Provider.of<TaskDetailController>(
+        context,
+        listen: false,
+      );
+
       if (token != null) {
         final controller = Provider.of<AddTaskController>(
           context,
@@ -280,7 +295,8 @@ class _ToDoBoardState extends State<ToDoBoard>
                   ? customAppBar(
                     context,
                     title: 'Open Task Screen',
-                    showBack: true,showLogo: false
+                    showBack: true,
+                    showLogo: false,
                   )
                   : null,
           body: RefreshIndicator(
@@ -289,7 +305,7 @@ class _ToDoBoardState extends State<ToDoBoard>
               padding: const EdgeInsets.symmetric(horizontal: 11.0),
               child:
                   openTaskController.isLoading
-                      ? buildShimmerLoader()
+                      ? OpenTaskShimmerLoader()
                       : openTaskController.openTaskList.isEmpty
                       ? buildNoTaskUI(context)
                       : buildProjectListUI(
@@ -1023,10 +1039,12 @@ class _ToDoBoardState extends State<ToDoBoard>
                                                     context,
                                                     'Task created successfully',
                                                   );
-                                                  Navigator.pushReplacementNamed(
-                                                    context,
-                                                    '/home',
-                                                  );
+
+                                                  // await _refreshTasks();
+                                                  // Navigator.pushReplacementNamed(
+                                                  //   context,
+                                                  //   '/home',
+                                                  // );
                                                   await Provider.of<
                                                     OpenTaskController
                                                   >(
@@ -1431,8 +1449,12 @@ class _ToDoBoardState extends State<ToDoBoard>
                                   //   return;
                                   // }
 
-                                  if (dashboardController.selectedPriority == null) {
-                                    CustomSnackBar.errorSnackBar(context, "Please select a priority");
+                                  if (dashboardController.selectedPriority ==
+                                      null) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      "Please select a priority/severity",
+                                    );
                                     return;
                                   }
                                   Navigator.pop(context);
@@ -1652,12 +1674,24 @@ class _ToDoBoardState extends State<ToDoBoard>
                                     children: [
                                       SvgPicture.asset(AppImages.calendarSvg),
                                       SizedBox(width: 11),
-                                      Text(
-                                        'Selected Range',
-                                        style: GoogleFonts.lato(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.black,
+                                      RichText(
+                                        text: TextSpan(
+                                          text: 'Selected Range ',
+                                          style: GoogleFonts.lato(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                          ),
+                                          children: const [
+                                            TextSpan(
+                                              text: '*',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -1692,12 +1726,24 @@ class _ToDoBoardState extends State<ToDoBoard>
                                     children: [
                                       SvgPicture.asset(AppImages.ClockSvg),
                                       SizedBox(width: 11),
-                                      Text(
-                                        'Estimated Hours',
-                                        style: GoogleFonts.lato(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.black,
+                                      RichText(
+                                        text: TextSpan(
+                                          text: 'Estimated Hours ',
+                                          style: GoogleFonts.lato(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                          ),
+                                          children: const [
+                                            TextSpan(
+                                              text: '*',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -1863,78 +1909,31 @@ class _ToDoBoardState extends State<ToDoBoard>
                               bottomButton(
                                 title: 'Next',
                                 subtitle: 'Back',
-                                icon: Icons.check,
-                                icons: Icons.clear,
-
+                                icon: Icons.arrow_forward,
+                                icons: Icons.arrow_back,
                                 onPress: () {
+                                  if (_rangeStart == null) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      "Please select date range",
+                                    );
+                                    return;
+                                  }
+                                  if (estimatedHoursController.text.isEmpty) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      "Please enter estimated hours",
+                                    );
+                                    return;
+                                  }
                                   if (_formKey.currentState!.validate()) {
-                                    // 🔹 Step 1: check Start Date
-                                    if (rangeStart == null) {
-                                      showDialog(
-                                        context: context,
-                                        builder:
-                                            (context) => AlertDialog(
-                                              title: const Text(
-                                                "Missing Information",
-                                              ),
-                                              content: const Text(
-                                                "Please select a Start Date before proceeding.",
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: const Text("OK"),
-                                                ),
-                                              ],
-                                            ),
-                                      );
-                                      return;
-                                    }
-                                    // 🔹 Step 2: check End Date
-                                    if (rangeEnd == null) {
-                                      showDialog(
-                                        context: context,
-                                        builder:
-                                            (context) => AlertDialog(
-                                              title: const Text(
-                                                "Missing Information",
-                                              ),
-                                              content: const Text(
-                                                "Please select an End Date before proceeding.",
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: const Text("OK"),
-                                                ),
-                                              ],
-                                            ),
-                                      );
-                                      return;
-                                    }
-
-                                    // ✅ Step 3: All validation passed → Save Data
-                                    print("🔽 Submitted Data:");
-                                    print(
-                                      "📅 Start Range: ${rangeStart?.toIso8601String()}",
-                                    );
-                                    print(
-                                      "📅 End Range: ${rangeEnd?.toIso8601String()}",
-                                    );
-                                    print(
-                                      "⏱ Estimated Hours: ${estimatedHoursController.text}",
-                                    );
-
+                                    _updateRangeText();
                                     final dateTimeModel = TaskDateTimeModel(
-                                      date: rangeStart ?? DateTime.now(),
+                                      date: _rangeStart ?? DateTime.now(),
                                       time: selectedTime,
                                       repeatText: repeatSummary,
-                                      rangeStart: rangeStart,
-                                      rangeEnd: rangeEnd,
+                                      rangeStart: _rangeStart,
+                                      rangeEnd: _rangeEnd,
                                       estimatedHours:
                                           estimatedHoursController.text,
                                     );
@@ -1947,29 +1946,31 @@ class _ToDoBoardState extends State<ToDoBoard>
                                         dateTimeModel,
                                       );
                                     }
-                                    //
+
                                     Navigator.pop(context);
                                     _isDateTimeSheetOpen = false;
                                     _currentFormStep = 3;
-
-                                    // ✅ Open AssignTo bottom sheet after this sheet is closed
-                                    Future.delayed(Duration.zero, () {
-                                      _showAssignToBottomSheet(
-                                        parentContext,
-                                      ); // parentContext = the context of your screen
-                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          _showAssignToBottomSheet(
+                                            parentContext,
+                                          );
+                                        });
                                   }
                                 },
-
                                 onTap: () {
                                   Navigator.pop(context);
                                   _isDateTimeSheetOpen = false;
                                   _currentFormStep = 1;
-                                  _showDescriptionBottomSheet(
-                                    context,
-                                    dashboardController!,
-                                    taskDetailController!,
-                                  );
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    _showDescriptionBottomSheet(
+                                      parentContext,
+                                      dashboardController!,
+                                      _taskDetailController!,
+                                    );
+                                  });
                                 },
                               ),
                               SizedBox(height: 45),
@@ -2126,12 +2127,24 @@ class _ToDoBoardState extends State<ToDoBoard>
                                             color: AppColors.black,
                                           ),
                                           const SizedBox(width: 7),
-                                          Text(
-                                            'Assign To',
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.black,
+                                          RichText(
+                                            text: TextSpan(
+                                              text: 'Assign To ',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.black,
+                                              ),
+                                              children: const [
+                                                TextSpan(
+                                                  text: '*',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],

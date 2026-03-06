@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../open_tasks/controller/open_task_controller.dart';
 import '../../open_tasks/model/add_task_response_model.dart';
 import '../../services/api_service.dart';
 import '../../common_widgets/custom_snackbar.dart';
@@ -243,6 +245,14 @@ class AddTaskController extends ChangeNotifier {
                 CustomSnackBar.successSnackBar(
                   _currentContext!,
                   responseModel.message,
+                );
+              }
+              if (_currentContext != null) {
+                await Provider.of<OpenTaskController>(
+                  _currentContext!,
+                  listen: false,
+                ).fetchOpenTasks(
+                  userId: userId,
                 );
               }
             } else {

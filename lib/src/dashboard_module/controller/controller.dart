@@ -82,6 +82,7 @@ class DashboardController extends ChangeNotifier {
   }
 
   void selectPriority(String priorityValue) {
+
     if (priorityValue.isEmpty) return;
 
     // Reset all priorities first

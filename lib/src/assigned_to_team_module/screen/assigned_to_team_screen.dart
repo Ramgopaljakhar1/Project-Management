@@ -66,13 +66,14 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+
     _initConnectivity();
-    didChangeDependencies();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
     );
     _loadProjects();
   }
+
   Future<void> _loadProjects() async {
     if (mounted) {
       setState(() {
@@ -120,6 +121,8 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
         _fetchDashboardData();
       } else {
         debugPrint("❌ User ID is null!");
+        // Stop loading if no user ID to avoid infinite shimmer
+        Provider.of<AssignedToTeam>(context, listen: false).stopLoading();
       }
     }
   }
@@ -164,40 +167,48 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
       _isNetworkAvailable = isConnected;
     });
   }
+
   final FocusNode _searchFocusNode = FocusNode();
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchDashboardData();
+    // _fetchDashboardData(); // Redundant, already called in initState / _loadUserData
   }
+
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
     super.dispose();
   }
+
   void clearSearch() {
     setState(() {
       searchQuery = '';
       searchController.clear();
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AssignedToTeam>(
       builder: (context, controller, child) {
-        final filteredTasks = controller.teamTaskListData.where((task) {
-          if (searchQuery.isEmpty) return true;
+        final filteredTasks =
+            controller.teamTaskListData.where((task) {
+              if (searchQuery.isEmpty) return true;
 
-          final name = task['task_name']?.toString().toLowerCase() ?? '';
-          final id = task['id']?.toString().toLowerCase() ?? '';
-          final description = task['task_detail']?.toString().toLowerCase() ?? '';
-          final assignee = task['assign_to_user_name']?.toString().toLowerCase() ?? '';
-          final date = task['assign_date']?.toString().toLowerCase() ?? '';
-          return name.contains(searchQuery) ||
-              id.contains(searchQuery) ||
-              description.contains(searchQuery) ||
-              assignee.contains(searchQuery) || date.contains(searchQuery);
-        }).toList();
+              final name = task['task_name']?.toString().toLowerCase() ?? '';
+              final id = task['id']?.toString().toLowerCase() ?? '';
+              final description =
+                  task['task_detail']?.toString().toLowerCase() ?? '';
+              final assignee =
+                  task['assign_to_user_name']?.toString().toLowerCase() ?? '';
+              final date = task['assign_date']?.toString().toLowerCase() ?? '';
+              return name.contains(searchQuery) ||
+                  id.contains(searchQuery) ||
+                  description.contains(searchQuery) ||
+                  assignee.contains(searchQuery) ||
+                  date.contains(searchQuery);
+            }).toList();
         filteredTasks.sort((a, b) {
           final idA = int.tryParse(a['id']?.toString() ?? '0') ?? 0;
           final idB = int.tryParse(b['id']?.toString() ?? '0') ?? 0;
@@ -210,7 +221,8 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                       ? customAppBar(
                         context,
                         title: 'Assigned Tasks',
-                        showBack: true,showLogo: false
+                        showBack: true,
+                        showLogo: false,
                         // filter: () {
                         //   showFilterBottomSheet(context);
                         // },
@@ -218,8 +230,8 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                       : null,
               backgroundColor: AppColors.backGroundColor,
               body:
-                  controller.isLoading
-                      ? Center(child: buildShimmerLoader())
+                  (controller.isLoading || !controller.isInitialized)
+                      ? Center(child: buildAssignedTaskScreenShimmer(context))
                       : filteredTasks.isEmpty
                       ? AppStateScreen(
                         showAppBar: false,
@@ -263,7 +275,8 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                                   Expanded(
                                     child: TextFormField(
                                       controller: searchController,
-                                      focusNode: _searchFocusNode, // Use focus node
+                                      focusNode:
+                                          _searchFocusNode, // Use focus node
                                       onChanged: updateSearch,
                                       decoration: InputDecoration(
                                         hintText: 'Search tasks...',
@@ -272,7 +285,10 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                                           horizontal: 20,
                                           vertical: 15,
                                         ),
-                                        prefixIcon: Icon(Icons.search, color: Colors.grey),
+                                        prefixIcon: Icon(
+                                          Icons.search,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -303,11 +319,25 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                             /// 📋 Task List
                             Expanded(
                               child:
-                                  controller.isLoading
-                                      ? Center(child: buildShimmerLoader())
+                                  (controller.isLoading ||
+                                          !controller.isInitialized)
+                                      ? Center(
+                                        child: buildAssignedTaskScreenShimmer(
+                                          context,
+                                        ),
+                                      )
                                       : filteredTasks.isEmpty
-                                      ? const Center(
-                                        child: Text('No tasks found'),
+                                      ? AppStateScreen(
+                                        showAppBar: false,
+                                        imagePath: AppImages.dataNotFound,
+                                        title: 'Data Not Found !',
+                                        subtitle1:
+                                            'We are unable to find the data that',
+                                        subtitle2: 'you are looking for.',
+                                        buttonText: 'Retry',
+                                        onButtonPressed: () {
+                                          _fetchDashboardData();
+                                        },
                                       )
                                       : ListView.builder(
                                         itemCount: filteredTasks.length,
@@ -327,8 +357,7 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                                                   ?.toString() ??
                                               'Unnamed Task';
                                           final String assigned_id =
-                                              task['assign_to']
-                                                  ?.toString() ??
+                                              task['assign_to']?.toString() ??
                                               'Unnamed Task';
                                           print('assign  to : $assignedName');
                                           print('assign  to Id : $assigned_id');
@@ -355,7 +384,7 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                                                     context,
                                                     listen: false,
                                                   );
-                                             // final notifyTo = task['assigned_to_user_id'];
+                                              // final notifyTo = task['assigned_to_user_id'];
                                               final taskId = task['id'];
 
                                               final createdBy = int.parse(
@@ -371,16 +400,21 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                                                       await controller
                                                           .sendReminder(
                                                             taskId: taskId,
-                                                            notifyTo: int.parse(assigned_id),
+                                                            notifyTo: int.parse(
+                                                              assigned_id,
+                                                            ),
                                                             createdBy:
                                                                 createdBy,
                                                           );
 
                                                   // Show API message dynamically
-                                                 // showTopNotification(context, message, bgColor: AppColors.appBar);
+                                                  // showTopNotification(context, message, bgColor: AppColors.appBar);
                                                 } catch (e) {
-
-                                                  showTopNotification(context, '❌ Failed to send reminder', bgColor:  AppColors.red);
+                                                  showTopNotification(
+                                                    context,
+                                                    '❌ Failed to send reminder',
+                                                    bgColor: AppColors.red,
+                                                  );
                                                 }
                                               } else {
                                                 ScaffoldMessenger.of(
@@ -396,7 +430,7 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                                                 );
                                               }
                                             },
-//
+                                            //
                                             onEyeTap: () {
                                               final taskId =
                                                   task['id']?.toString() ??
@@ -471,12 +505,13 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             // Filter tasks based on selected project
-            List<dynamic> filteredTasks = selectedProjectId != null
-                ? controller.teamTaskListData.where((task) {
-              final taskProjectId = task['project_name']?.toString();
-              return taskProjectId == selectedProjectId;
-            }).toList()
-                : controller.teamTaskListData;
+            List<dynamic> filteredTasks =
+                selectedProjectId != null
+                    ? controller.teamTaskListData.where((task) {
+                      final taskProjectId = task['project_name']?.toString();
+                      return taskProjectId == selectedProjectId;
+                    }).toList()
+                    : controller.teamTaskListData;
 
             return Padding(
               padding: EdgeInsets.only(
@@ -506,9 +541,15 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                       const Text('No projects available')
                     else
                       DropdownSearch<String>(
-                        items:(filter, loadProps) =>  _projectList
-                            .map((project) => project['name']?.toString() ?? 'Unknown Project')
-                            .toList(),
+                        items:
+                            (filter, loadProps) =>
+                                _projectList
+                                    .map(
+                                      (project) =>
+                                          project['name']?.toString() ??
+                                          'Unknown Project',
+                                    )
+                                    .toList(),
                         selectedItem: selectedProjectName,
                         popupProps: PopupProps.modalBottomSheet(
                           showSearchBox: true,
@@ -516,7 +557,7 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                             maxHeight: MediaQuery.of(context).size.height * 0.7,
                           ),
                           searchFieldProps: TextFieldProps(
-                           // autofocus: true, // This ensures keyboard stays open
+                            // autofocus: true, // This ensures keyboard stays open
                             padding: const EdgeInsets.symmetric(
                               vertical: 30,
                               horizontal: 17,
@@ -557,10 +598,12 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
 
                             // Get selected project ID
                             final selectedProject = _projectList.firstWhere(
-                                  (project) => project['name'] == selectedProjectName,
+                              (project) =>
+                                  project['name'] == selectedProjectName,
                               orElse: () => <String, dynamic>{},
                             );
-                            selectedProjectId = selectedProject['id']?.toString();
+                            selectedProjectId =
+                                selectedProject['id']?.toString();
 
                             debugPrint(
                               'Selected Project: $selectedProjectName ($selectedProjectId)',
@@ -577,9 +620,15 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
 
                     /// 🔽 Task Dropdown (filtered by selected project)
                     DropdownSearch<String>(
-                      items:(filter, loadProps) =>  filteredTasks
-                          .map((task) => task['task_name']?.toString() ?? 'Unknown Task')
-                          .toList(),
+                      items:
+                          (filter, loadProps) =>
+                              filteredTasks
+                                  .map(
+                                    (task) =>
+                                        task['task_name']?.toString() ??
+                                        'Unknown Task',
+                                  )
+                                  .toList(),
                       selectedItem: selectedTaskName,
                       popupProps: PopupProps.modalBottomSheet(
                         showSearchBox: true,
@@ -626,7 +675,7 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
                         setModalState(() {
                           selectedTaskName = val;
                           final selectedTask = filteredTasks.firstWhere(
-                                (task) => task['task_name'] == selectedTaskName,
+                            (task) => task['task_name'] == selectedTaskName,
                             orElse: () => <String, dynamic>{},
                           );
                           selectedTaskId = selectedTask['id']?.toString();
@@ -676,5 +725,4 @@ class _AssignedToTeamScreenState extends State<AssignedToTeamScreen> {
       },
     );
   }
-
 }

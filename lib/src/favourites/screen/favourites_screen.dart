@@ -115,8 +115,9 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
         ? Scaffold(
           appBar: customAppBar(context, title: 'Favourites', showBack: true,showLogo: false),
           body:
+
               isLoading
-                  ? Center(child: buildShimmerLoader()) // ✅ Show loader
+                  ? Center(child: buildAssignedTaskScreenShimmer(context)) // ✅ Show loader
                   : filteredTasks.isEmpty
                   ? AppStateScreen(
                     // ✅ No data found UI
@@ -219,7 +220,8 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                       ],
                     ),
                   ),
-        )
+
+    )
         : InternetIssue(
           onRetryPressed: () async {
             final result = await _connectivity.checkConnectivity();

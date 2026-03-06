@@ -87,15 +87,15 @@ Widget CompletedViewCollapse({
             children: [
               if (img != null) // Only show if img is not null
                 SvgPicture.asset(img, color: prefixIconColor ?? Colors.black, width: 22, height: 22),
-              const SizedBox(width: 12),
+              //const SizedBox(width: 12),
               if (img != null) const SizedBox(width: 12),
               RichText(
                 text: TextSpan(
                   text: title,
-                  style: TextStyle(
+                  style: GoogleFonts.lato(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: titleColor ?? Colors.black,
+                    color: titleColor ?? Color(0xFF000000),
                   ),
                 ),
               ),

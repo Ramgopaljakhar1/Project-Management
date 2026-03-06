@@ -1,6 +1,11 @@
 class ApiConstants {
  static String baseUrl = 'http://210.89.42.219:8083/'; // for test
-  //static String baseUrl = 'http://210.89.42.217:8082/';  // base Url for Production
+ //static String baseUrl = 'http://210.89.42.217:8082/';  // base Url for Production
+ // To Do Steps     Application build.gradle
+ // isMinifyEnabled = true
+ // shrinkResources = true
+ //version code,version name
+
   static String loginApi = 'api/login/';
   static String logOut = 'api/logout/';
   static String addTask = 'api/task_master/';

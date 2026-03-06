@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../assigned_tasks/screen/assigned_tasks.dart';
 import '../assigned_to_team_module/screen/assigned_to_team_screen.dart';
 import '../common_widgets/appbar.dart';
+import '../common_widgets/common_shimmer_loader.dart';
 import '../common_widgets/custom_dropdown.dart';
 import '../deyaled_module/deyaled_screen.dart';
 import '../open_tasks/screen/to_do_board.dart';
@@ -328,7 +329,7 @@ class _DashboardDetailsState extends State<DashboardDetails> {
           appBar: customAppBar(context, title: 'Dashboard', showBack: true),
           body:
               isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(child: buildDashboardShimmer(context))
                   : Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Column(
@@ -501,13 +502,13 @@ class _DashboardDetailsState extends State<DashboardDetails> {
                         const SizedBox(height: 36),
                         Expanded(
                           child: GridView.builder(
-                            shrinkWrap:true,
-                            itemCount:data.length,
+                            shrinkWrap: true,
+                            itemCount: data.length,
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  mainAxisSpacing: 13,
-                                  crossAxisSpacing: 13,
+                                  mainAxisSpacing: 3,
+                                  crossAxisSpacing: 3,
                                   childAspectRatio: 1.2,
                                 ),
                             itemBuilder: (context, index) {
@@ -557,7 +558,6 @@ class _DashboardDetailsState extends State<DashboardDetails> {
                                       break;
                                     case 1:
                                       nextPage = AssignedToTeamScreen(
-
                                         assignTo: _selectedUserId,
                                         userId: _userId,
                                         taskId:
@@ -659,67 +659,70 @@ class _DashboardDetailsState extends State<DashboardDetails> {
                                     );
                                   }
                                 },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    color: Colors.white,
-                                    border: const Border(
-                                      bottom: BorderSide(
-                                        color: Colors.orange,
-                                        width: 3,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal:8.0,vertical: 4),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      color: Colors.white,
+                                      border: const Border(
+                                        bottom: BorderSide(
+                                          color: Colors.orange,
+                                          width: 3,
+                                        ),
                                       ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          offset: const Offset(0, -3),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          offset: const Offset(0, 3),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.3),
-                                        offset: const Offset(0, -3),
-                                        blurRadius: 4,
-                                        spreadRadius: 1,
-                                      ),
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.3),
-                                        offset: const Offset(0, 3),
-                                        blurRadius: 4,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  ),
-                                  padding: const EdgeInsets.all(8),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Image.asset(
-                                        item['icon']!,
-                                        height: 60,
-                                        width: 60,
-                                      ),
-                                      Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const SizedBox(height: 11),
-                                          Text(
-                                            item['count']!,
-                                            style: GoogleFonts.lato(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF333333),
+                                    padding: const EdgeInsets.all(8),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Image.asset(
+                                          item['icon']!,
+                                          height: 60,
+                                          width: 60,
+                                        ),
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const SizedBox(height: 11),
+                                            Text(
+                                              item['count']!,
+                                              style: GoogleFonts.lato(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w700,
+                                                color: const Color(0xFF333333),
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            item['label']!,
-                                            textAlign: TextAlign.center,
-                                            style: GoogleFonts.lato(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF333333),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              item['label']!,
+                                              textAlign: TextAlign.center,
+                                              style: GoogleFonts.lato(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF333333),
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );

@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:project_management/src/common_widgets/common_shimmer_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -51,6 +52,7 @@ class TaskDetailsScreen extends StatefulWidget {
 class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   late TextEditingController taskNameController;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  FocusNode estimatedHoursFocus = FocusNode();
   bool isFavourite = false;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
@@ -79,7 +81,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   List<String> selectedTagUserIds = [];
   final TextEditingController dateRangeController = TextEditingController();
   final TextEditingController estimatedHoursController =
-  TextEditingController();
+      TextEditingController();
   TextEditingController repeatDateTimeController = TextEditingController();
 
   File? _uploadedFile;
@@ -123,33 +125,33 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       context: context,
       builder:
           (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Take Photo'),
-              onTap: () {
-                Navigator.pop(context, 'camera');
-              },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.camera_alt),
+                  title: Text('Take Photo'),
+                  onTap: () {
+                    Navigator.pop(context, 'camera');
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Choose from Gallery'),
+                  onTap: () {
+                    Navigator.pop(context, 'gallery');
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.insert_drive_file),
+                  title: Text('Choose File'),
+                  onTap: () {
+                    Navigator.pop(context, 'file');
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context, 'gallery');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.insert_drive_file),
-              title: Text('Choose File'),
-              onTap: () {
-                Navigator.pop(context, 'file');
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (result == 'camera') {
@@ -265,12 +267,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       taskDetailController.selectedProjectId =
           widget.task?.projectName?.toString();
       taskDetailController.selectedPriority =
-      widget.task?.priorityLookupdet != null
-          ? {
-        'id': widget.task?.priorityLookupdet,
-        'name': widget.task?.priorityLookupdet,
-      }
-          : null;
+          widget.task?.priorityLookupdet != null
+              ? {
+                'id': widget.task?.priorityLookupdet,
+                'name': widget.task?.priorityLookupdet,
+              }
+              : null;
 
       // Initialize date/time if available
       _updateValidationFlags();
@@ -324,7 +326,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       // Project
       if (task.projectName != null) {
         final project = taskDetails.projectList.firstWhere(
-              (p) => p['id'].toString() == task.projectName.toString(),
+          (p) => p['id'].toString() == task.projectName.toString(),
           orElse: () => {},
         );
         if (project.isNotEmpty) {
@@ -338,7 +340,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       // Priority
       if (task.priorityLookupdet != null) {
         final priority = taskDetails.priorityList.firstWhere(
-              (p) => p['id'].toString() == task.priorityLookupdet.toString(),
+          (p) => p['id'].toString() == task.priorityLookupdet.toString(),
           orElse: () => {},
         );
         if (priority.isNotEmpty) {
@@ -376,7 +378,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       // Assigned user
       if (task.assignedTo != null) {
         final user = taskDetails.userList.firstWhere(
-              (u) => u['user_id'].toString() == task.assignedTo.toString(),
+          (u) => u['user_id'].toString() == task.assignedTo.toString(),
           orElse: () => {},
         );
         if (user.isNotEmpty) {
@@ -394,10 +396,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             task.taggedUsers!
                 .map(
                   (user) => {
-                'user_id': user.id,
-                'user_name': user.name ?? 'Unknown',
-              },
-            )
+                    'user_id': user.id,
+                    'user_name': user.name ?? 'Unknown',
+                  },
+                )
                 .toList();
       }
 
@@ -411,14 +413,15 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _loadData() async {
+    setState(() => isLoading = true);
     try {
-      await taskDetailController!.fetchProjectList();
-      await taskDetailController!.fetchUserList();
-      await taskDetailController!.priority();
+      await taskDetailController.fetchProjectList();
+      await taskDetailController.fetchUserList();
+      await taskDetailController.priority();
       // Fetching data
-      final projects = await taskDetailController!.fetchProjectList();
-      final users = await taskDetailController!.fetchUserList();
-      final priorities = await taskDetailController!.priority();
+      final projects = await taskDetailController.fetchProjectList();
+      final users = await taskDetailController.fetchUserList();
+      final priorities = await taskDetailController.priority();
 
       if (widget.task != null) {
         _initializeWithTaskData(widget.task!);
@@ -431,9 +434,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       });
       // Updating the controller state
       setState(() {
-        taskDetailController!.projectList =
+        taskDetailController.projectList =
             projects; // Corrected from projectData
-        taskDetailController!.priorityList = priorities;
+        taskDetailController.priorityList = priorities;
 
         userList = users;
 
@@ -453,6 +456,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       debugPrint('🧪 Raw Users List: $users');
     } catch (e) {
       debugPrint('❌ Failed to load project or user data: $e');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -500,8 +505,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   // Update connection status handler
   void _updateConnectionStatus(List<ConnectivityResult> results) {
     final isConnected = results.any(
-          (result) =>
-      result == ConnectivityResult.mobile ||
+      (result) =>
+          result == ConnectivityResult.mobile ||
           result == ConnectivityResult.wifi,
     );
 
@@ -585,545 +590,587 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     debugPrint('Task Name ---: ${widget.taskName.toString()}');
     return _isNetworkAvailable
         ? GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Scaffold(
-        appBar: customAppBar(context, title: 'Task Details', showBack: true),
-        body: Stack(
-          children: [
-            SingleChildScrollView(
-              // padding: const EdgeInsets.all(20),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    Container(
-                      width:
-                      MediaQuery.of(
-                        context,
-                      ).size.width, // ✅ ensures full screen width
-                      decoration: BoxDecoration(
-                        color: Color(0xffffffff),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 3),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, -3),
-                          ),
-                        ],
-                      ),
+          onTap: () {
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Scaffold(
+            appBar: customAppBar(
+              context,
+              title: 'Task Details',
+              showBack: true,
+            ),
+            body:
+                isLoading
+                    ? Center(child: viewTaskScreenShimmer(context))
+                    : SingleChildScrollView(
+                      // padding: const EdgeInsets.all(20),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 11.0,
-                          vertical: 17,
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      AppImages.addTaskSvg,
-                                      width: 23,
-                                      height: 23,
-                                      color: Colors.black,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppStrings.taskName,
-                                      style: GoogleFonts.lato(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              textLabelFormField(
-                                readOnly: true,
-                                controller: taskNameController,
-                                // img: AppImages.addTaskSvg,
-                                taskName: 'Task Name',
-                                hintText: 'Enter task here',
-                                onChanged: (value) {
-                                  debugPrint('Task changed: $value');
-                                },
-                                borderColor: Colors.grey.shade400,
-                                prefixIconColor: Colors.black,
-                                backgroundColor: Colors.white,
-                              ),
-                              SizedBox(height: 26),
-                              addDetailsCollapse(
-                                selectedProject:
-                                taskDetails.selectedProjectName,
-                                //selectedProject: selectedProject,
-                                projectList:
-                                taskDetails.projectList
-                                    .map((p) => p['name'] as String)
-                                    .toList(),
-                                onChange: (value) {
-                                  final selected = taskDetails.projectList
-                                      .firstWhere(
-                                        (p) => p['name'] == value,
-                                    orElse: () => {},
-                                  );
-                                  if (selected.isNotEmpty) {
-                                    taskDetails.setSelectedProject(
-                                      selected['id']?.toString(),
-                                      selected['name'],
-                                    );
-                                  }
-                                },
-                                onPress: () {
-                                  setState(() {
-                                    isDetailsExpanded = !isDetailsExpanded;
-                                  });
-                                },
-                                prefixIconImage: AppImages.descriptionSvg,
-                                isExpanded: isDetailsExpanded,
-                                title: 'Add Details',
-                                img: AppImages.descriptionSvg,
-                                hintText: 'Add details here',
-                                controller: taskDetails.detailsController,
-                                maxLines: 3,
-                                borderColor: Colors.grey,
-                                backgroundColor: Colors.white,
-                                titleColor: Colors.black,
-                                prefixIconColor: Colors.grey,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter details';
-                                  }
-                                  // final wordCount = RegExp(r'\b\w+\b').allMatches(value.trim()).length;
-                                  //
-                                  // if (wordCount < 10) {
-                                  //   return 'Please enter at least 10 words';
-                                  // }
-                                  return null;
-                                },
-                                projectNameController: taskNameController,
-                                onUploadPress: _pickFile,
-                                uploadedFile: _uploadedFile,
-                                onDeleteFile: _deleteFile,
-                                showCollapseIcon: false,
-                                // Update the addDetailsCollapse widget's onPriorityChange:
-                                selectedPriority:
-                                taskDetails.selectedPriority?['name'] ??
-                                    '',
-                                onPriorityChange: (value) {
-                                  final selected = taskDetails.priorityList
-                                      .firstWhere(
-                                        (p) => p['name'] == value,
-                                    orElse: () => {},
-                                  );
-                                  if (selected.isNotEmpty) {
-                                    taskDetails.setSelectedPriority(selected);
-                                  }
-                                },
-                              ),
-                              // Divider(),
-                              SizedBox(height: 11),
-
-                              ///Add Date/Time
-                              GestureDetector(
-                                onTap:() {
-                                  _showProjectBottomSheet(context);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 11,
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Container(
+                              width:
+                                  MediaQuery.of(
+                                    context,
+                                  ).size.width, // ✅ ensures full screen width
+                              decoration: BoxDecoration(
+                                color: Color(0xffffffff),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 3),
                                   ),
-                                  child: Row(
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, -3),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 11.0,
+                                  vertical: 17,
+                                ),
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.center,
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      SvgPicture.asset(
-                                        AppImages.dateTimeSvg,
-                                        width: 22,
-                                        height: 22,
-                                        fit: BoxFit.cover,
-                                        color: AppColors.black,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            SvgPicture.asset(
+                                              AppImages.addTaskSvg,
+                                              width: 23,
+                                              height: 23,
+                                              color: Colors.black,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              AppStrings.taskName,
+                                              style: GoogleFonts.lato(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      SizedBox(width: 12),
-                                      if (taskDetails.dateTimeList.isEmpty)
-                                        Text(
-                                          AppStrings.addDateTime,
-                                          style: GoogleFonts.lato(
-                                            color: AppColors.black,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
+                                      textLabelFormField(
+                                        readOnly: true,
+                                        controller: taskNameController,
+                                        // img: AppImages.addTaskSvg,
+                                        taskName: 'Task Name',
+                                        hintText: 'Enter task here',
+                                        onChanged: (value) {
+                                          debugPrint('Task changed: $value');
+                                        },
+                                        borderColor: Colors.grey.shade400,
+                                        prefixIconColor: Colors.black,
+                                        backgroundColor: Colors.white,
+                                      ),
+                                      SizedBox(height: 26),
+                                      addDetailsCollapse(
+                                        selectedProject:
+                                            taskDetails.selectedProjectName,
+                                        //selectedProject: selectedProject,
+                                        projectList:
+                                            taskDetails.projectList
+                                                .map((p) => p['name'] as String)
+                                                .toList(),
+                                        onChange: (value) {
+                                          final selected = taskDetails
+                                              .projectList
+                                              .firstWhere(
+                                                (p) => p['name'] == value,
+                                                orElse: () => {},
+                                              );
+                                          if (selected.isNotEmpty) {
+                                            taskDetails.setSelectedProject(
+                                              selected['id']?.toString(),
+                                              selected['name'],
+                                            );
+                                          }
+                                        },
+                                        onPress: () {
+                                          setState(() {
+                                            isDetailsExpanded =
+                                                !isDetailsExpanded;
+                                          });
+                                        },
+                                        prefixIconImage:
+                                            AppImages.descriptionSvg,
+                                        isExpanded: isDetailsExpanded,
+                                        title: 'Add Details',
+                                        img: AppImages.descriptionSvg,
+                                        hintText: 'Add details here',
+                                        controller:
+                                            taskDetails.detailsController,
+                                        maxLines: 3,
+                                        borderColor: Colors.grey,
+                                        backgroundColor: Colors.white,
+                                        titleColor: Colors.black,
+                                        prefixIconColor: Colors.grey,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter details';
+                                          }
+                                          // final wordCount = RegExp(r'\b\w+\b').allMatches(value.trim()).length;
+                                          //
+                                          // if (wordCount < 10) {
+                                          //   return 'Please enter at least 10 words';
+                                          // }
+                                          return null;
+                                        },
+                                        projectNameController:
+                                            taskNameController,
+                                        onUploadPress: _pickFile,
+                                        uploadedFile: _uploadedFile,
+                                        onDeleteFile: _deleteFile,
+                                        showCollapseIcon: false,
+                                        // Update the addDetailsCollapse widget's onPriorityChange:
+                                        selectedPriority:
+                                            taskDetails
+                                                .selectedPriority?['name'] ??
+                                            '',
+                                        onPriorityChange: (value) {
+                                          final selected = taskDetails
+                                              .priorityList
+                                              .firstWhere(
+                                                (p) => p['name'] == value,
+                                                orElse: () => {},
+                                              );
+                                          if (selected.isNotEmpty) {
+                                            taskDetails.setSelectedPriority(
+                                              selected,
+                                            );
+                                          }
+                                        },
+                                      ),
+                                      // Divider(),
+                                      SizedBox(height: 11),
+
+                                      ///Add Date/Time
+                                      GestureDetector(
+                                        onTap: () {
+                                          _showProjectBottomSheet(context);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 11,
                                           ),
-                                        )
-                                      else
-                                        Expanded(
-                                          child: SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            child: Row(
-                                              // spacing: 9, runSpacing: 8,
-                                              children:
-                                              taskDetails.dateTimeList.map((
-                                                  data,
-                                                  ) {
-                                                return Container(
-                                                  padding:
-                                                  EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 11,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.white,
-                                                    border: Border.all(
-                                                      color: AppColors.gray
-                                                          .withOpacity(0.7),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              SvgPicture.asset(
+                                                AppImages.dateTimeSvg,
+                                                width: 22,
+                                                height: 22,
+                                                fit: BoxFit.cover,
+                                                color: AppColors.black,
+                                              ),
+                                              SizedBox(width: 12),
+                                              if (taskDetails
+                                                  .dateTimeList
+                                                  .isEmpty)
+                                                RichText(
+                                                  text: TextSpan(
+                                                    text: AppStrings.addDateTime + " ",
+                                                    style: GoogleFonts.lato(
+                                                      color: AppColors.black,
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
                                                     ),
-                                                    borderRadius:
-                                                    BorderRadius.circular(
-                                                      16,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                    MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        data.formattedDateTime(
-                                                          context,
-                                                        ),
-                                                        style:GoogleFonts.lato(
-                                                          color:
-                                                          AppColors
-                                                              .black,
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                          FontWeight
-                                                              .w500,
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      GestureDetector(
-                                                        onTap: () {
-                                                          setState((){
-                                                            taskDetails
-                                                                .dateTimeList
-                                                                .remove(data);
-                                                          });
-                                                        },
-                                                        child: Icon(
-                                                          Icons.close,
-                                                          size: 16,
-                                                          color:
-                                                          AppColors.gray,
+                                                    children: const [
+                                                      TextSpan(
+                                                        text: '*',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
                                                         ),
                                                       ),
                                                     ],
                                                   ),
-                                                );
-                                              }).toList(),
-                                            ),
+                                                )
+                                              else
+                                                Expanded(
+                                                  child: SingleChildScrollView(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    child: Row(
+                                                      // spacing: 9, runSpacing: 8,
+                                                      children:
+                                                          taskDetails.dateTimeList.map((
+                                                            data,
+                                                          ) {
+                                                            return Container(
+                                                              padding:
+                                                                  EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        11,
+                                                                  ),
+                                                              decoration: BoxDecoration(
+                                                                color:
+                                                                    AppColors
+                                                                        .white,
+                                                                border: Border.all(
+                                                                  color: AppColors
+                                                                      .gray
+                                                                      .withOpacity(
+                                                                        0.7,
+                                                                      ),
+                                                                ),
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      16,
+                                                                    ),
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Text(
+                                                                    data.formattedDateTime(
+                                                                      context,
+                                                                    ),
+                                                                    style: GoogleFonts.lato(
+                                                                      color:
+                                                                          AppColors
+                                                                              .black,
+                                                                      fontSize:
+                                                                          14,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                    ),
+                                                                  ),
+                                                                  SizedBox(
+                                                                    width: 8,
+                                                                  ),
+                                                                  GestureDetector(
+                                                                    onTap: () {
+                                                                      setState(() {
+                                                                        taskDetails
+                                                                            .dateTimeList
+                                                                            .remove(
+                                                                              data,
+                                                                            );
+                                                                      });
+                                                                    },
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .close,
+                                                                      size: 16,
+                                                                      color:
+                                                                          AppColors
+                                                                              .gray,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          }).toList(),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // SizedBox(height: 11),
-                              // Divider(),
-                              SizedBox(height: 18),
-
-                              /// Assign To
-                              assignToUser(
-                                context,
-                                taskDetail: taskDetails,
-                                showCollapseIcon: false,
-                                onAssignToTap: () {
-                                  _showAssignToBottomSheet(
-                                    context,
-                                    taskDetails,
-                                  );
-                                  setState(
-                                        () {},
-                                  );
-                                },
-                                onTagUserUpdated:() {
-                                  setState(
-                                        () {},
-                                  ); // or any custom logic to refresh UI
-                                },
-                              ),
-                              SizedBox(height: 20),
-
-                              /// Add to Favorite
-                              GestureDetector(
-                                onTap: _toggleFavourite,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 11,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isFavourite
-                                            ? Icons.star
-                                            : Icons.star_border,
-                                        color:
-                                        isFavourite
-                                            ? Colors.red
-                                            : Colors.black,
-                                        size: 22,
                                       ),
 
-                                      SizedBox(width: 12),
-                                      Text(
-                                        AppStrings.addToFavorite,
-                                        style: GoogleFonts.lato(
-                                          color: AppColors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
+                                      // SizedBox(height: 11),
+                                      // Divider(),
+                                      SizedBox(height: 18),
+
+                                      /// Assign To
+                                      assignToUser(
+                                        context,
+                                        taskDetail: taskDetails,
+                                        showCollapseIcon: false,
+                                        onAssignToTap: () {
+                                          _showAssignToBottomSheet(
+                                            context,
+                                            taskDetails,
+                                          );
+                                          setState(() {});
+                                        },
+                                        onTagUserUpdated: () {
+                                          setState(
+                                            () {},
+                                          ); // or any custom logic to refresh UI
+                                        },
+                                      ),
+                                      SizedBox(height: 20),
+
+                                      /// Add to Favorite
+                                      GestureDetector(
+                                        onTap: _toggleFavourite,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 11,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                isFavourite
+                                                    ? Icons.star
+                                                    : Icons.star_border,
+                                                color:
+                                                    isFavourite
+                                                        ? Colors.red
+                                                        : Colors.black,
+                                                size: 22,
+                                              ),
+
+                                              SizedBox(width: 12),
+                                              Text(
+                                                AppStrings.addToFavorite,
+                                                style: GoogleFonts.lato(
+                                                  color: AppColors.black,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 18.0),
+                              child: bottomButton(
+                                padding: 18,
+                                width: 40,
+                                title: 'Save',
+                                subtitle: 'Cancel',
+                                icon: Icons.arrow_forward,
+                                icons: Icons.arrow_forward,
+                                onPress: () async {
+                                  if (!_formKey.currentState!.validate())
+                                    return;
+
+                                  final taskDetails =
+                                      Provider.of<TaskDetailController>(
+                                        context,
+                                        listen: false,
+                                      );
+
+                                  final taskText =
+                                      taskDetails.detailsController.text.trim();
+
+                                  // 1️⃣ Check if completely empty
+                                  if (taskText.isEmpty) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please enter valid task details',
+                                    );
+                                    return;
+                                  }
+
+                                  // Then manually check project selection
+                                  if (taskDetails.selectedProjectId == null) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please select a project',
+                                    );
+                                    return;
+                                  }
+                                  // 4. File upload validation (MANDATORY)
+                                  //   if (_uploadedFile == null) {
+                                  //    CustomSnackBar.errorSnackBar(
+                                  //      context,
+                                  //      'Please upload a file',
+                                  //    );
+                                  //
+                                  //  }
+                                  //
+                                  //  // 5. File size validation (max 25 MB)
+                                  // if (_uploadedFile != null) {
+                                  //    try {
+                                  //      final fileSize = await _uploadedFile!.length();
+                                  //      const maxSize = 25 * 1024 * 1024; // 25 MB in bytes
+                                  //
+                                  //      if (fileSize > maxSize) {
+                                  //        CustomSnackBar.errorSnackBar(
+                                  //          context,
+                                  //          'File size should not exceed 25 MB',
+                                  //        );
+                                  //
+                                  //      }
+                                  //    } catch (e) {
+                                  //      CustomSnackBar.errorSnackBar(
+                                  //        context,
+                                  //        'Error checking file size',
+                                  //      );
+                                  //
+                                  //    }
+                                  //  }
+                                  // 3. Priority/Severity validation (MANDATORY)
+                                  if (taskDetails.selectedPriority == null ||
+                                      taskDetails.selectedPriority?['id'] ==
+                                          null) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please select a priority/severity',
+                                    );
+                                  }
+                                  if (taskDetails.dateTimeList.isEmpty) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please select date & time',
+                                    );
+                                    return;
+                                  }
+                                  if (estimatedHoursController.text
+                                      .trim()
+                                      .isEmpty) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please enter estimated hours',
+                                    );
+                                    return;
+                                  }
+                                  // String estimatedHoursValue = estimatedHoursController.text.trim();
+                                  if (estimatedHoursController.text
+                                          .trim()
+                                          .isEmpty ||
+                                      estimatedHoursController.text.trim() ==
+                                          "0") {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please enter estimated hours',
+                                    );
+                                    return;
+                                  }
+                                  if (taskDetails.selectedAssignToUserId ==
+                                      null) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Please select a AssignTo User',
+                                    );
+                                    return;
+                                  }
+                                  // if (taskDetails.taggedUsers.isEmpty) {
+                                  //   CustomSnackBar.errorSnackBar(
+                                  //     context,
+                                  //     'Please select tagged users',
+                                  //   );
+                                  //   return;
+                                  // }
+
+                                  setState(() => isLoading = true);
+                                  try {
+                                    await taskDetails.updateTaskWithFile(
+                                      context: context,
+                                      taskId:
+                                          int.tryParse(widget.taskId ?? '') ??
+                                          0,
+                                      taskName: widget.taskName,
+                                      taskDetail:
+                                          taskDetails.detailsController.text,
+                                      selectedProjectId:
+                                          taskDetails.selectedProjectId,
+                                      selectedPriorityId:
+                                          taskDetails.selectedPriority?['id']
+                                              ?.toString(),
+                                      isFavourite: isFavourite,
+                                      assignTo:
+                                          taskDetails.selectedAssignToUserId,
+                                      notifyUserIds:
+                                          taskDetails.taggedUsers
+                                              .map((e) => int.tryParse(e) ?? 0)
+                                              .toList(),
+                                      uploadedFile: _uploadedFile,
+                                      assignDate:
+                                          taskDetails.dateTimeList.isNotEmpty
+                                              ? taskDetails
+                                                      .dateTimeList
+                                                      .first
+                                                      .date ??
+                                                  DateTime.now()
+                                              : DateTime.now(),
+                                      assignTime:
+                                          taskDetails.dateTimeList.isNotEmpty
+                                              ? taskDetails
+                                                      .dateTimeList
+                                                      .first
+                                                      .time ??
+                                                  TimeOfDay.now()
+                                              : TimeOfDay.now(),
+                                      estimatedHours:
+                                          estimatedHoursController.text,
+                                      // Add this
+                                      estStartDate: rangeStart,
+                                      // Add this
+                                      estEndDate: rangeEnd,
+                                    );
+                                    _clearFormData();
+                                    //showSuccessDialog(context);
+                                    if (!mounted) return;
+                                    // showSuccessDialog(context);
+                                    //  setState(() {
+
+                                    //  });
+                                    Navigator.pop(context, true);
+                                  } catch (e) {
+                                    debugPrint('Save task error: $e');
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      'Save task error: $e',
+                                    );
+                                  } finally {
+                                    if (mounted)
+                                      setState(() => isLoading = false);
+                                  }
+                                },
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  debugPrint('Cancel button...');
+                                },
+                              ),
+                            ),
+                            SizedBox(height: 50),
+                          ],
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18.0),
-                      child: bottomButton(
-                        padding: 18,
-                        width: 40,
-                        title: 'Save',
-                        subtitle: 'Cancel',
-                        icon: Icons.arrow_forward,
-                        icons: Icons.arrow_forward,
-                        onPress: () async {
-                          if (!_formKey.currentState!.validate()) return;
-
-                          final taskDetails =
-                          Provider.of<TaskDetailController>(
-                            context,
-                            listen: false,
-                          );
-
-                          final taskText =
-                          taskDetails.detailsController.text.trim();
-
-                          // 1️⃣ Check if completely empty
-                          if (taskText.isEmpty) {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please enter valid task details',
-                            );
-                            return;
-                          }
-
-                          // Then manually check project selection
-                          if (taskDetails.selectedProjectId == null) {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please select a project',
-                            );
-                            return;
-                          }
-                          // 4. File upload validation (MANDATORY)
-                         //   if (_uploadedFile == null) {
-                         //    CustomSnackBar.errorSnackBar(
-                         //      context,
-                         //      'Please upload a file',
-                         //    );
-                         //
-                         //  }
-                         //
-                         //  // 5. File size validation (max 25 MB)
-                         // if (_uploadedFile != null) {
-                         //    try {
-                         //      final fileSize = await _uploadedFile!.length();
-                         //      const maxSize = 25 * 1024 * 1024; // 25 MB in bytes
-                         //
-                         //      if (fileSize > maxSize) {
-                         //        CustomSnackBar.errorSnackBar(
-                         //          context,
-                         //          'File size should not exceed 25 MB',
-                         //        );
-                         //
-                         //      }
-                         //    } catch (e) {
-                         //      CustomSnackBar.errorSnackBar(
-                         //        context,
-                         //        'Error checking file size',
-                         //      );
-                         //
-                         //    }
-                         //  }
-                          // 3. Priority/Severity validation (MANDATORY)
-                          if (taskDetails.selectedPriority == null ||
-                              taskDetails.selectedPriority?['id'] == null) {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please select a priority/severity',
-                            );
-                          }
-                          if (taskDetails.dateTimeList.isEmpty) {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please select date & time',
-                            );
-                            return;
-                          }
-                          if (estimatedHoursController.text.trim().isEmpty) {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please enter estimated hours',
-                            );
-                            return;
-                          }
-                          // String estimatedHoursValue = estimatedHoursController.text.trim();
-                          if (estimatedHoursController.text.trim().isEmpty ||
-                              estimatedHoursController.text.trim() == "0") {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please enter estimated hours',
-                            );
-                            return;
-                          }
-                          if (taskDetails.selectedAssignToUserId == null) {
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Please select a AssignTo User',
-                            );
-                            return;
-                          }
-                          // if (taskDetails.taggedUsers.isEmpty) {
-                          //   CustomSnackBar.errorSnackBar(
-                          //     context,
-                          //     'Please select tagged users',
-                          //   );
-                          //   return;
-                          // }
-
-                          setState(() => isLoading = true);
-                          try {
-                            await taskDetails.updateTaskWithFile(
-                              context: context,
-                              taskId: int.tryParse(widget.taskId ?? '') ?? 0,
-                              taskName: widget.taskName,
-                              taskDetail: taskDetails.detailsController.text,
-                              selectedProjectId:
-                              taskDetails.selectedProjectId,
-                              selectedPriorityId:
-                              taskDetails.selectedPriority?['id']
-                                  ?.toString(),
-                              isFavourite: isFavourite,
-                              assignTo: taskDetails.selectedAssignToUserId,
-                              notifyUserIds:
-                              taskDetails.taggedUsers
-                                  .map((e) => int.tryParse(e) ?? 0)
-                                  .toList(),
-                              uploadedFile: _uploadedFile,
-                              assignDate:
-                              taskDetails.dateTimeList.isNotEmpty
-                                  ? taskDetails.dateTimeList.first.date ??
-                                  DateTime.now()
-                                  : DateTime.now(),
-                              assignTime:
-                              taskDetails.dateTimeList.isNotEmpty
-                                  ? taskDetails.dateTimeList.first.time ??
-                                  TimeOfDay.now()
-                                  : TimeOfDay.now(),
-                              estimatedHours: estimatedHoursController.text,
-                              // Add this
-                              estStartDate:rangeStart,
-                              // Add this
-                              estEndDate: rangeEnd,
-                            );
-                            _clearFormData();
-                            //showSuccessDialog(context);
-                            if (!mounted) return;
-                            // showSuccessDialog(context);
-                            //  setState(() {
-
-                            //  });
-                            Navigator.pop(context, true);
-                          } catch (e) {
-                            debugPrint('Save task error: $e');
-                            CustomSnackBar.errorSnackBar(
-                              context,
-                              'Save task error: $e',
-                            );
-                          } finally {
-                            if (mounted) setState(() =>  isLoading = false);
-                          }
-                        },
-                        onTap: () {
-                          Navigator.pop(context);
-                          debugPrint('Cancel button...');
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 50),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        if (isLoading)
-                          Positioned(
-                            bottom: 100,
-                            height: 100,
-                            child: Center(
-                              child: commonLoader(
-                                color: AppColors.appBar,
-                                size: 40,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    )
+          ),
+        )
         : InternetIssue(
-      onRetryPressed: () async {
-        final result = await _connectivity.checkConnectivity();
-        _updateConnectionStatus(result);
-      },
-      showAppBar: true,
-    );
+          onRetryPressed: () async {
+            final result = await _connectivity.checkConnectivity();
+            _updateConnectionStatus(result);
+          },
+          showAppBar: true,
+        );
   }
 
   final dropdownSearchKey =
-  GlobalKey<DropdownSearchState<Map<String, dynamic>>>();
+      GlobalKey<DropdownSearchState<Map<String, dynamic>>>();
   // ✅ Add these for multi-tag support
   Future<void> _showAssignToBottomSheet(
-      BuildContext context,
-      TaskDetailController taskDetail,
-      ) async {
-
-
+    BuildContext context,
+    TaskDetailController taskDetail,
+  ) async {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1131,7 +1178,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       enableDrag: false,
       builder: (context) {
         return SafeArea(
-
           child: StatefulBuilder(
             builder: (context, setModalState) {
               return Padding(
@@ -1202,14 +1248,26 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     color: AppColors.black,
                                   ),
                                   const SizedBox(width: 7),
-                                  Text(
-                                    'Assign To',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.black,
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Assign To ',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.black,
+                                      ),
+                                      children: const [
+                                        TextSpan(
+                                          text: '*',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 17,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  )
                                 ],
                               ),
                               const SizedBox(height: 10),
@@ -1218,28 +1276,28 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   return userList
                                       .where(
                                         (user) => user['user_name']
-                                        .toString()
-                                        .toLowerCase()
-                                        .contains(
-                                      filter?.toLowerCase() ?? '',
-                                    ),
-                                  )
+                                            .toString()
+                                            .toLowerCase()
+                                            .contains(
+                                              filter?.toLowerCase() ?? '',
+                                            ),
+                                      )
                                       .toList();
                                 },
                                 selectedItem:
-                                selectedAssignToId != null
-                                    ? userList.firstWhere(
-                                      (user) =>
-                                  user['user_id'].toString() ==
-                                      selectedAssignToId,
-                                  orElse: () => {},
-                                )
-                                    : null,
+                                    selectedAssignToId != null
+                                        ? userList.firstWhere(
+                                          (user) =>
+                                              user['user_id'].toString() ==
+                                              selectedAssignToId,
+                                          orElse: () => {},
+                                        )
+                                        : null,
                                 itemAsString: (user) => user['user_name'] ?? '',
                                 compareFn:
                                     (item, selectedItem) =>
-                                item['user_id'].toString() ==
-                                    selectedItem['user_id'].toString(),
+                                        item['user_id'].toString() ==
+                                        selectedItem['user_id'].toString(),
                                 onChanged: (user) {
                                   if (user != null) {
                                     setModalState(() {
@@ -1253,9 +1311,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   showSearchBox: true, // ✅ Enable search
                                   constraints: BoxConstraints(
                                     maxHeight:
-                                    MediaQueryData.fromWindow(
-                                      WidgetsBinding.instance.window,
-                                    ).size.height *
+                                        MediaQueryData.fromWindow(
+                                          WidgetsBinding.instance.window,
+                                        ).size.height *
                                         0.95,
                                   ),
 
@@ -1298,9 +1356,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     focusedBorder: OutlineInputBorder(
                                       borderSide: BorderSide(
                                         color:
-                                        Colors
-                                            .grey
-                                            .shade500, // Slightly darker when focused
+                                            Colors
+                                                .grey
+                                                .shade500, // Slightly darker when focused
                                         width: 0.8,
                                       ),
                                       borderRadius: BorderRadius.circular(10),
@@ -1347,34 +1405,34 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 debugPrint("🔍 Searching for: $filter");
 
                                 final filtered =
-                                userList
-                                    .where(
-                                      (user) => user['user_name']
-                                      .toLowerCase()
-                                      .contains(
-                                    filter?.toLowerCase() ?? '',
-                                  ),
-                                )
-                                    .toList();
+                                    userList
+                                        .where(
+                                          (user) => user['user_name']
+                                              .toLowerCase()
+                                              .contains(
+                                                filter?.toLowerCase() ?? '',
+                                              ),
+                                        )
+                                        .toList();
 
                                 final selectedIds =
-                                selectedTagUsers
-                                    .map((u) => u['user_id'].toString())
-                                    .toSet();
+                                    selectedTagUsers
+                                        .map((u) => u['user_id'].toString())
+                                        .toSet();
 
                                 filtered.sort((a, b) {
                                   final aSelected =
-                                  selectedIds.contains(
-                                    a['user_id'].toString(),
-                                  )
-                                      ? 0
-                                      : 1;
+                                      selectedIds.contains(
+                                            a['user_id'].toString(),
+                                          )
+                                          ? 0
+                                          : 1;
                                   final bSelected =
-                                  selectedIds.contains(
-                                    b['user_id'].toString(),
-                                  )
-                                      ? 0
-                                      : 1;
+                                      selectedIds.contains(
+                                            b['user_id'].toString(),
+                                          )
+                                          ? 0
+                                          : 1;
                                   return aSelected.compareTo(bSelected);
                                 });
 
@@ -1391,34 +1449,34 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 return Wrap(
                                   spacing: 6,
                                   children:
-                                  selectedTagUsers.map((user) {
-                                    return Chip(
-                                      label: Text(user['user_name']),
-                                      onDeleted: () {
-                                        debugPrint(
-                                          "❌ Removed user from modal sheet ${user['user_name']}",
-                                        );
-                                        setModalState(() {
-                                          selectedTagUsers.remove(user);
-                                          selectedTagUserIds.removeWhere(
+                                      selectedTagUsers.map((user) {
+                                        return Chip(
+                                          label: Text(user['user_name']),
+                                          onDeleted: () {
+                                            debugPrint(
+                                              "❌ Removed user from modal sheet ${user['user_name']}",
+                                            );
+                                            setModalState(() {
+                                              selectedTagUsers.remove(user);
+                                              selectedTagUserIds.removeWhere(
                                                 (id) =>
-                                            id ==
-                                                user['user_id'].toString(),
-                                          );
-                                          taskDetail.taggedUsers =
-                                              selectedTagUserIds;
-                                          taskDetail.taggedUserDetails =
-                                              selectedTagUsers;
-                                        });
+                                                    id ==
+                                                    user['user_id'].toString(),
+                                              );
+                                              taskDetail.taggedUsers =
+                                                  selectedTagUserIds;
+                                              taskDetail.taggedUserDetails =
+                                                  selectedTagUsers;
+                                            });
 
-                                        // Trigger UI update for DropdownSearch
-                                        dropdownSearchKey.currentState
-                                            ?.changeSelectedItems(
-                                          selectedTagUsers,
+                                            // Trigger UI update for DropdownSearch
+                                            dropdownSearchKey.currentState
+                                                ?.changeSelectedItems(
+                                                  selectedTagUsers,
+                                                );
+                                          },
                                         );
-                                      },
-                                    );
-                                  }).toList(),
+                                      }).toList(),
                                 );
                               },
 
@@ -1446,8 +1504,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                       removedItem['user_id'].toString(),
                                     );
                                     selectedTagUsers.removeWhere(
-                                          (user) =>
-                                      user['user_id'].toString() ==
+                                      (user) =>
+                                          user['user_id'].toString() ==
                                           removedItem['user_id'].toString(),
                                     );
                                   });
@@ -1469,31 +1527,28 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 },
 
                                 itemBuilder: (
-                                    context,
-                                    item,
-                                    isDisabled,
-                                    isSelected,
-                                    ) {
+                                  context,
+                                  item,
+                                  isDisabled,
+                                  isSelected,
+                                ) {
                                   // Always calculate selected dynamically
                                   final bool selected = selectedTagUserIds
                                       .contains(item['user_id'].toString());
 
                                   return InkWell(
-
                                     onTap: () {
-
-
                                       if (selected) {
-
                                         setModalState(() {
                                           selectedTagUsers.removeWhere(
-                                                (u) =>
-                                            u['user_id'].toString() ==
+                                            (u) =>
+                                                u['user_id'].toString() ==
                                                 item['user_id'].toString(),
                                           );
                                           selectedTagUserIds.removeWhere(
-                                                (id) =>
-                                            id == item['user_id'].toString(),
+                                            (id) =>
+                                                id ==
+                                                item['user_id'].toString(),
                                           );
 
                                           taskDetail.taggedUsers =
@@ -1502,8 +1557,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                               selectedTagUsers;
                                           dropdownSearchKey.currentState
                                               ?.changeSelectedItems(
-                                            selectedTagUsers,
-                                          );
+                                                selectedTagUsers,
+                                              );
                                         });
                                         // updatedUsers.remove(item);
                                         // updatedUserIds.remove(item['user_id'].toString());
@@ -1519,8 +1574,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                               selectedTagUsers;
                                           dropdownSearchKey.currentState
                                               ?.changeSelectedItems(
-                                            selectedTagUsers,
-                                          );
+                                                selectedTagUsers,
+                                              );
                                         });
                                       }
 
@@ -1534,7 +1589,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
                                       // This forces DropdownSearch to repaint itemBuilder UI
                                       dropdownSearchKey.currentState
-                                          ?.changeSelectedItems(selectedTagUsers);
+                                          ?.changeSelectedItems(
+                                            selectedTagUsers,
+                                          );
                                     },
 
                                     child: ListTile(
@@ -1543,28 +1600,28 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                           CircleAvatar(
                                             radius: 22,
                                             backgroundColor:
-                                            selected
-                                                ? Colors.blue
-                                                : Colors.grey.shade200,
+                                                selected
+                                                    ? Colors.blue
+                                                    : Colors.grey.shade200,
                                             child:
-                                            item['user_avatar'] == null
-                                                ? Icon(
-                                              Icons.person,
-                                              color:
-                                              selected
-                                                  ? Colors.white
-                                                  : Colors
-                                                  .grey
-                                                  .shade400,
-                                              size: 27,
-                                            )
-                                                : null,
+                                                item['user_avatar'] == null
+                                                    ? Icon(
+                                                      Icons.person,
+                                                      color:
+                                                          selected
+                                                              ? Colors.white
+                                                              : Colors
+                                                                  .grey
+                                                                  .shade400,
+                                                      size: 27,
+                                                    )
+                                                    : null,
                                             backgroundImage:
-                                            item['user_avatar'] != null
-                                                ? NetworkImage(
-                                              item['user_avatar'],
-                                            )
-                                                : null,
+                                                item['user_avatar'] != null
+                                                    ? NetworkImage(
+                                                      item['user_avatar'],
+                                                    )
+                                                    : null,
                                           ),
 
                                           if (selected)
@@ -1591,9 +1648,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                         item['user_name'],
                                         style: TextStyle(
                                           fontWeight:
-                                          selected
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
+                                              selected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
                                           color: Colors.black,
                                         ),
                                       ),
@@ -1603,7 +1660,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
                                 checkBoxBuilder:
                                     (context, item, isDisabled, isSelected) =>
-                                const SizedBox.shrink(),
+                                        const SizedBox.shrink(),
 
                                 containerBuilder: (context, popupWidget) {
                                   return Column(
@@ -1617,7 +1674,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                           ),
                                           child: Column(
                                             crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                                CrossAxisAlignment.start,
                                             children: [
                                               // Optional: show selected user count, etc.
                                             ],
@@ -1637,7 +1694,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
                                 constraints: BoxConstraints(
                                   maxHeight:
-                                  MediaQuery.of(context).size.height * 0.95,
+                                      MediaQuery.of(context).size.height * 0.95,
                                 ),
 
                                 searchFieldProps: TextFieldProps(
@@ -1657,8 +1714,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
                               compareFn:
                                   (item, selectedItem) =>
-                              item['user_id'].toString() ==
-                                  selectedItem['user_id'].toString(),
+                                      item['user_id'].toString() ==
+                                      selectedItem['user_id'].toString(),
 
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: InputDecoration(
@@ -1731,7 +1788,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 },
                                 child: Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       "Clear",
@@ -1766,8 +1823,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     SharedPrefConstant().kUserData,
                                   );
                                   final currentUserId =
-                                  userData?['id']?.toString();
-                                  debugPrint('currentUserId :--> $currentUserId');
+                                      userData?['id']?.toString();
+                                  debugPrint(
+                                    'currentUserId :--> $currentUserId',
+                                  );
                                   if (isAssignToSelf) {
                                     if (currentUserId != null) {
                                       taskDetail.setAssignToUser(currentUserId);
@@ -1796,16 +1855,23 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                       );
                                     }
                                   }
-
+                                  // Nuclear Unfocus Sequence
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                  FocusScope.of(
+                                    context,
+                                  ).requestFocus(FocusNode());
+                                  SystemChannels.textInput.invokeMethod(
+                                    'TextInput.hide',
+                                  );
                                   Navigator.pop(context);
                                 },
                                 child: Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       "Apply",
-                                      style:TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w400,
                                         color: AppColors.white,
@@ -1859,9 +1925,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       builder: (context) {
         // Initialize with existing values or defaults
         DateTime? selectedDate =
-        taskDetail.dateTimeList.isNotEmpty
-            ? taskDetail.dateTimeList[0].date
-            : DateTime.now();
+            taskDetail.dateTimeList.isNotEmpty
+                ? taskDetail.dateTimeList[0].date
+                : DateTime.now();
 
         Map<String, dynamic>? repeatData;
 
@@ -1881,7 +1947,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     final startStr = DateFormat(
                       'MMM dd, yyyy',
                     ).format(_rangeStart!);
-                    final endStr = DateFormat('MMM dd, yyyy').format(_rangeEnd!);
+                    final endStr = DateFormat(
+                      'MMM dd, yyyy',
+                    ).format(_rangeEnd!);
                     dateRangeController.text = '$startStr - $endStr';
                     rangeStart = _rangeStart; // Set global values
                     rangeEnd = _rangeEnd;
@@ -1918,7 +1986,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 _focusedDay = focusedDay;
 
                                 if (_rangeSelectionMode ==
-                                    RangeSelectionMode.toggledOn &&
+                                        RangeSelectionMode.toggledOn &&
                                     _rangeStart != null &&
                                     _rangeEnd == null &&
                                     selectedDay.isAfter(_rangeStart!)) {
@@ -1976,14 +2044,26 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 children: [
                                   SvgPicture.asset(AppImages.calendarSvg),
                                   SizedBox(width: 11),
-                                  Text(
-                                    'Selected Range',
-                                    style:TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.black,
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Selected Range ',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
+                                      children: const [
+                                        TextSpan(
+                                          text: '*',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  )
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -1997,7 +2077,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   return null;
                                 },
                                 decoration: InputDecoration(
-
                                   // labelText: 'Selected Range',
                                   border: OutlineInputBorder(
                                     borderSide: BorderSide(
@@ -2016,25 +2095,37 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 children: [
                                   SvgPicture.asset(AppImages.ClockSvg),
                                   SizedBox(width: 11),
-                                  Text(
-                                    'Estimated Hours',
-                                    style:TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.black,
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Estimated Hours ',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
+                                      children: const [
+                                        TextSpan(
+                                          text: '*',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  )
                                 ],
                               ),
                               SizedBox(height: 7),
                               TextFormField(
                                 controller: estimatedHoursController,
+                                focusNode: estimatedHoursFocus,
                                 keyboardType: TextInputType.number,
                                 maxLength: 2,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
-
                                 decoration: InputDecoration(
                                   counterText: '',
                                   contentPadding: const EdgeInsets.symmetric(
@@ -2111,7 +2202,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   debugPrint(
                                     '➡ selectedDays: ${repeatData?['selectedDays']}',
                                   );
-                                  debugPrint('➡ startsOn: ${repeatData?['startsOn']}');
+                                  debugPrint(
+                                    '➡ startsOn: ${repeatData?['startsOn']}',
+                                  );
                                   debugPrint(
                                     '➡ endsOption: ${repeatData?['endsOption']}',
                                   );
@@ -2121,7 +2214,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   debugPrint(
                                     '➡ occurrences: ${repeatData?['occurrences']}',
                                   );
-                                  debugPrint('📝 Repeat Summary: $repeatSummary');
+                                  debugPrint(
+                                    '📝 Repeat Summary: $repeatSummary',
+                                  );
                                 });
 
                                 setState(() {
@@ -2148,7 +2243,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   if (repeatSummary != null)
                                     Text(
                                       repeatSummary ?? 'Repeat',
-                                      style:TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -2177,7 +2272,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             icons: Icons.clear,
 
                             onPress: () {
-                              if (_bottomSheetFormKey.currentState!.validate()) {
+                              if (_bottomSheetFormKey.currentState!
+                                  .validate()) {
                                 if (rangeStart != null ||
                                     estimatedHoursController.text.isNotEmpty ||
                                     repeatSummary != null) {
@@ -2199,7 +2295,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     repeatText: repeatSummary,
                                     rangeStart: rangeStart,
                                     rangeEnd: rangeEnd,
-                                    estimatedHours: estimatedHoursController.text,
+                                    estimatedHours:
+                                        estimatedHoursController.text,
                                   );
 
                                   if (taskDetail.dateTimeList.isEmpty) {
@@ -2208,6 +2305,14 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     taskDetail.updateDateTime(0, dateTimeModel);
                                   }
 
+                                  // Nuclear Unfocus Sequence
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                  FocusScope.of(
+                                    context,
+                                  ).requestFocus(FocusNode());
+                                  SystemChannels.textInput.invokeMethod(
+                                    'TextInput.hide',
+                                  );
                                   Navigator.pop(context);
                                 } else {
                                   // Validation failed
@@ -2229,27 +2334,33 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     context: context,
                                     builder:
                                         (context) => AlertDialog(
-                                      title: const Text(
-                                        "Missing Information",
-                                      ),
-                                      content: Text(
-                                        "Please select $missingFields before proceeding.",
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          child: const Text("OK"),
+                                          title: const Text(
+                                            "Missing Information",
+                                          ),
+                                          content: Text(
+                                            "Please select $missingFields before proceeding.",
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text("OK"),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
                                   );
                                 }
                               }
                             },
 
                             onTap: () {
+                              // Nuclear Unfocus Sequence
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              FocusScope.of(context).requestFocus(FocusNode());
+                              SystemChannels.textInput.invokeMethod(
+                                'TextInput.hide',
+                              );
                               Navigator.pop(context);
                             },
                           ),
@@ -2267,9 +2378,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   void _showSelectTimeBottomSheet(
-      BuildContext context,
-      StateSetter setModalState,
-      ) async {
+    BuildContext context,
+    StateSetter setModalState,
+  ) async {
     TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: selectedTime ?? TimeOfDay.now(),
@@ -2359,21 +2470,21 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     if (repeatData['frequency'] == 'Week') {
       int index = repeatData['selectedDays'].indexWhere((e) => e);
       String weekDay =
-      [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-      ][index];
+          [
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+          ][index];
       subtitle += ' on $weekDay';
     }
 
     if (repeatData['endsOption'] == 'On') {
       subtitle +=
-      ', until ${DateFormat('MMM d, y').format(repeatData['endsOnDate'])}';
+          ', until ${DateFormat('MMM d, y').format(repeatData['endsOnDate'])}';
     } else if (repeatData['endsOption'] == 'After') {
       subtitle += ', ${repeatData['occurrences']} times';
     }
@@ -2382,9 +2493,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   void showUserSelectionBottomSheet(
-      BuildContext context,
-      List<Map<String, dynamic>> userList,
-      ) {
+    BuildContext context,
+    List<Map<String, dynamic>> userList,
+  ) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -2423,10 +2534,10 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
   @override
   Widget build(BuildContext context) {
     final filtered =
-    widget.userList.where((user) {
-      final name = user['user_name']?.toLowerCase() ?? '';
-      return name.contains(filter?.toLowerCase() ?? '');
-    }).toList();
+        widget.userList.where((user) {
+          final name = user['user_name']?.toLowerCase() ?? '';
+          return name.contains(filter?.toLowerCase() ?? '');
+        }).toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -2445,17 +2556,17 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
             hintText: 'Search user...',
             prefixIcon: const Icon(Icons.search),
             suffixIcon:
-            filter?.isNotEmpty == true
-                ? IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  filter = '';
-                });
-              },
-            )
-                : null,
+                filter?.isNotEmpty == true
+                    ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          filter = '';
+                        });
+                      },
+                    )
+                    : null,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           onChanged: (value) {
@@ -2475,9 +2586,9 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
             leading: CircleAvatar(
               backgroundColor: isSelected ? Colors.blue[100] : Colors.grey[300],
               child:
-              isSelected
-                  ? const Icon(Icons.check_circle, color: Colors.green)
-                  : const Icon(Icons.person, color: Colors.grey),
+                  isSelected
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : const Icon(Icons.person, color: Colors.grey),
             ),
             title: Text(
               userName,
@@ -2493,8 +2604,7 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
                 } else {
                   selectedUserIds.add(userId);
                 }
-              }
-              );
+              });
             },
           );
         }),

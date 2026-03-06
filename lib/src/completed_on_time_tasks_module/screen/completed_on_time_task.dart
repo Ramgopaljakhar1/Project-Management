@@ -197,7 +197,7 @@ class _CompletedOnTimeTaskState extends State<CompletedOnTimeTask> {
             _fetchDashboardData();
           },
         )
-            : Center(child: buildShimmerLoader())
+            : Center(child:  buildAssignedTaskScreenShimmer(context))
 
         // ✅ API se data empty mila
             : completedOnTime.completedTasks.isEmpty

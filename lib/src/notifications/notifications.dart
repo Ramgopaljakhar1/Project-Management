@@ -259,7 +259,7 @@ class _NotificationsState extends State<Notifications> {
   }
 
   /// Navigate to TaskCompletedScreen
-  void _navigateToTaskCompletedScreen(BuildContext context, dynamic taskId) {
+  void _navigateToTaskCompletedScreen(BuildContext context, dynamic taskId,) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -285,6 +285,7 @@ class _NotificationsState extends State<Notifications> {
           },
           source: 'notifications',
           showEditButton: true,
+
         ),
       ),
     );

@@ -271,9 +271,8 @@ class _MyTaskScreenState extends State<MyTaskScreen> {
                 isTimedOut = false;
               });
               _loadUserData();
-            },
-                      )
-              : Center(child: buildShimmerLoader())
+            })
+              : Center(child:  buildAssignedTaskScreenShimmer(context))
               : Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: 12.0, vertical: 12),

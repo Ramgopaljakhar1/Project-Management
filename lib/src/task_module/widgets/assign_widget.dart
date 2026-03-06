@@ -31,12 +31,24 @@ Widget assignToUser(BuildContext context, {
             children: [
              SvgPicture.asset(AppImages.assignToSvg,width: 22,height:22,color:AppColors.black,),
               SizedBox(width: 12),
-              Text(
-                AppStrings.assignTo,
-                style: GoogleFonts.lato(
-                  color: AppColors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              RichText(
+                text: TextSpan(
+                  text: AppStrings.assignTo + " ",
+                  style: GoogleFonts.lato(
+                    color: AppColors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  children: const [
+                    TextSpan(
+                      text: '*',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 17),

@@ -18,6 +18,7 @@ import '../common_widgets/appbar.dart';
 import '../common_widgets/common_bottom_button.dart';
 import '../common_widgets/custom_drawer.dart';
 import '../common_widgets/custom_snackbar.dart';
+import '../common_widgets/lodar.dart';
 import '../completed_on_time_tasks_module/screen/completed_on_time_task.dart';
 import '../deyaled_module/deyaled_screen.dart';
 import '../my_task/screen/my_task_screen.dart';
@@ -46,14 +47,14 @@ class _HomeState extends State<Home>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final dropdownSearchKey =
-  GlobalKey<DropdownSearchState<Map<String, dynamic>>>();
+      GlobalKey<DropdownSearchState<Map<String, dynamic>>>();
   final assignedDropdownSearchKey =
-  GlobalKey<DropdownSearchState<Map<String, dynamic>>>();
+      GlobalKey<DropdownSearchState<Map<String, dynamic>>>();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _projectController = TextEditingController();
   final TextEditingController dateRangeController = TextEditingController();
   final TextEditingController estimatedHoursController =
-  TextEditingController();
+      TextEditingController();
   TextEditingController repeatDateTimeController = TextEditingController();
   final FocusNode _textFieldFocusNode = FocusNode();
   String? _selectedPriorityId;
@@ -89,6 +90,7 @@ class _HomeState extends State<Home>
   bool _isDescriptionSheetOpen = false;
   bool _isDateTimeSheetOpen = false;
   bool _isAssignToSheetOpen = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -111,6 +113,11 @@ class _HomeState extends State<Home>
           userId: user!['id'].toString(),
         );
       }
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     });
     _tabController.addListener(() {
       setState(() {});
@@ -123,7 +130,7 @@ class _HomeState extends State<Home>
     final tokenVal = await prefs.read(SharedPrefConstant().kAuthToken);
     final userData = await prefs.read(SharedPrefConstant().kUserData);
 
-    if (!mounted) return;  // Ensure widget is still part of the widget tree
+    if (!mounted) return; // Ensure widget is still part of the widget tree
 
     setState(() {
       token = tokenVal;
@@ -273,7 +280,7 @@ class _HomeState extends State<Home>
           title: 'Home',
           scaffoldKey: _scaffoldKey,
           onAdd: () {
-            debugPrint('onADDD');
+            debugPrint('onADD');
             if (token != null && user?['id'] != null) {
               _showProjectBottomSheetTask(
                 context,
@@ -293,84 +300,91 @@ class _HomeState extends State<Home>
             debugPrint("Bell tapped");
           },
         ),
-        body: Column(
-          children: [
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0),
-              child: AnimatedBuilder(
-                animation: _tabController.animation!,
-                builder: (context, _) {
-                  return TabBar(
-                    tabAlignment: TabAlignment.center,
-                    controller: _tabController,
-                    isScrollable: true,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 18,
-                    ), // ✅ No external padding
-                    labelPadding: const EdgeInsets.only(
-                      right: 35,
-                      bottom: 11,
-                    ), // ✅ Only right padding
-                    indicatorPadding: EdgeInsets.zero,
-                    overlayColor: MaterialStateProperty.all(Colors.transparent),
-                    dividerColor: Colors.grey.shade400,
-                    indicator: UnderlineTabIndicator(
-                      borderSide: BorderSide(
-                        width: 3,
-                        color: tabIndicatorColors[_tabController.index],
+        body:
+            _isLoading
+                ? Center(child: commonLoader(color: AppColors.appBar, size: 40))
+                : Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      child: AnimatedBuilder(
+                        animation: _tabController.animation!,
+                        builder: (context, _) {
+                          return TabBar(
+                            tabAlignment: TabAlignment.center,
+                            controller: _tabController,
+                            isScrollable: true,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 18,
+                            ), // ✅ No external padding
+                            labelPadding: const EdgeInsets.only(
+                              right: 35,
+                              bottom: 11,
+                            ), // ✅ Only right padding
+                            indicatorPadding: EdgeInsets.zero,
+                            overlayColor: MaterialStateProperty.all(
+                              Colors.transparent,
+                            ),
+                            dividerColor: Colors.grey.shade400,
+                            indicator: UnderlineTabIndicator(
+                              borderSide: BorderSide(
+                                width: 3,
+                                color: tabIndicatorColors[_tabController.index],
+                              ),
+                              insets: const EdgeInsets.symmetric(horizontal: 1),
+                            ),
+                            labelColor: Colors.black,
+                            unselectedLabelColor: Colors.grey,
+                            labelStyle: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
+                            tabs: [
+                              _buildTab(
+                                AppImages.myTask,
+                                "Open Task",
+                                tabIndicatorColors[0],
+                              ),
+                              _buildTab(
+                                AppImages.myTask,
+                                "Assigned",
+                                tabIndicatorColors[1],
+                              ),
+                              _buildTab(
+                                AppImages.overdue,
+                                "Overdue",
+                                tabIndicatorColors[2],
+                              ),
+                              _buildTab(
+                                AppImages.delayedSvg,
+                                "Delayed",
+                                tabIndicatorColors[3],
+                              ),
+                              _buildTab(
+                                AppImages.completedSvg,
+                                "Completed",
+                                tabIndicatorColors[4],
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                      insets: const EdgeInsets.symmetric(horizontal: 1),
                     ),
-                    labelColor: Colors.black,
-                    unselectedLabelColor: Colors.grey,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                    tabs: [
-                      _buildTab(
-                        AppImages.myTask,
-                        "Open Task",
-                        tabIndicatorColors[0],
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // ✅ uses your controller
+                        children: [
+                          ToDoBoard(),
+                          AssignedToTeamScreen(showAppBar: false),
+                          OverdueScreen(),
+                          GetDelayedScreen(),
+                          CompletedOnTimeTask(),
+                        ],
                       ),
-                      _buildTab(
-                        AppImages.myTask,
-                        "Assigned",
-                        tabIndicatorColors[1],
-                      ),
-                      _buildTab(
-                        AppImages.overdue,
-                        "Overdue",
-                        tabIndicatorColors[2],
-                      ),
-                      _buildTab(
-                        AppImages.delayedSvg,
-                        "Delayed",
-                        tabIndicatorColors[3],
-                      ),
-                      _buildTab(
-                        AppImages.completedSvg,
-                        "Completed",
-                        tabIndicatorColors[4],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController, // ✅ uses your controller
-                children: [
-                  ToDoBoard(),
-                  AssignedToTeamScreen(showAppBar: false),
-                  OverdueScreen(),
-                  GetDelayedScreen(),
-                  CompletedOnTimeTask(),
-                ],
-              ),
-            ),
-          ],
-        ),
+                    ),
+                  ],
+                ),
         //
       ),
     );
@@ -381,29 +395,29 @@ class _HomeState extends State<Home>
     final entry = OverlayEntry(
       builder:
           (context) => Positioned(
-        bottom: 80, // 👈 BottomSheet ke upar dikhane ke liye adjust karo
-        left: 20,
-        right: 20,
-        child: Material(
-          elevation: 6,
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.red,
+            bottom: 80, // 👈 BottomSheet ke upar dikhane ke liye adjust karo
+            left: 20,
+            right: 20,
+            child: Material(
+              elevation: 6,
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.white),
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  message,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
     );
 
     overlay.insert(entry);
@@ -414,10 +428,10 @@ class _HomeState extends State<Home>
   }
 
   void _showProjectBottomSheetTask(
-      BuildContext context,
-      String? token, {
-        required String userId,
-      }) {
+    BuildContext context,
+    String? token, {
+    required String userId,
+  }) {
     final rootContext = context;
     final controller = Provider.of<AddTaskController>(context, listen: false);
     final taskDetails = Provider.of<TaskDetailController>(
@@ -521,10 +535,10 @@ class _HomeState extends State<Home>
                                         ),
                                       ),
                                       contentPadding:
-                                      const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 16,
-                                      ),
+                                          const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                            horizontal: 16,
+                                          ),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(30),
                                         borderSide: BorderSide(
@@ -544,110 +558,110 @@ class _HomeState extends State<Home>
                                       children: [
                                         GestureDetector(
                                           onTap:
-                                          controller.taskNameController.text
-                                              .trim()
-                                              .length >=
-                                              10
-                                              ? () {
-                                            _currentFormStep = 1;
-                                            _showDescriptionBottomSheet(
-                                              context,
-                                              dashboardController,
-                                              taskDetails,
-                                            );
-                                          }
-                                              : null,
+                                              controller.taskNameController.text
+                                                          .trim()
+                                                          .length >=
+                                                      10
+                                                  ? () {
+                                                    _currentFormStep = 1;
+                                                    _showDescriptionBottomSheet(
+                                                      context,
+                                                      dashboardController,
+                                                      taskDetails,
+                                                    );
+                                                  }
+                                                  : null,
                                           child: SvgPicture.asset(
                                             AppImages.descriptionSvg,
                                             width: 28,
                                             height: 28,
                                             color:
-                                            controller
-                                                .taskNameController
-                                                .text
-                                                .trim()
-                                                .length >=
-                                                10
-                                                ? null
-                                                : Colors.grey,
+                                                controller
+                                                            .taskNameController
+                                                            .text
+                                                            .trim()
+                                                            .length >=
+                                                        10
+                                                    ? null
+                                                    : Colors.grey,
                                           ),
                                         ),
                                         const SizedBox(width: 26),
                                         GestureDetector(
                                           onTap:
-                                          controller.taskNameController.text
-                                              .trim()
-                                              .length >=
-                                              10
-                                              ? () {
-                                            _currentFormStep = 2;
-                                            _showProjectBottomSheetDate(
-                                              context,
-                                            );
-                                            debugPrint('date Time...');
-                                          }
-                                              : null,
+                                              controller.taskNameController.text
+                                                          .trim()
+                                                          .length >=
+                                                      10
+                                                  ? () {
+                                                    _currentFormStep = 2;
+                                                    _showProjectBottomSheetDate(
+                                                      context,
+                                                    );
+                                                    debugPrint('date Time...');
+                                                  }
+                                                  : null,
                                           child: SvgPicture.asset(
                                             AppImages.dateTimeSvg,
                                             width: 28,
                                             height: 28,
                                             color:
-                                            controller
-                                                .taskNameController
-                                                .text
-                                                .trim()
-                                                .length >=
-                                                10
-                                                ? null
-                                                : Colors.grey,
+                                                controller
+                                                            .taskNameController
+                                                            .text
+                                                            .trim()
+                                                            .length >=
+                                                        10
+                                                    ? null
+                                                    : Colors.grey,
                                           ),
                                         ),
                                         const SizedBox(width: 26),
                                         GestureDetector(
                                           onTap:
-                                          controller.taskNameController.text
-                                              .trim()
-                                              .length >=
-                                              10
-                                              ? () {
-                                            _currentFormStep = 3;
-                                            _showAssignToBottomSheet(
-                                              context,
-                                            );
-                                            debugPrint('Assign To...');
-                                          }
-                                              : null,
+                                              controller.taskNameController.text
+                                                          .trim()
+                                                          .length >=
+                                                      10
+                                                  ? () {
+                                                    _currentFormStep = 3;
+                                                    _showAssignToBottomSheet(
+                                                      context,
+                                                    );
+                                                    debugPrint('Assign To...');
+                                                  }
+                                                  : null,
                                           child: SvgPicture.asset(
                                             AppImages.assignToSvg,
                                             width: 28,
                                             height: 28,
                                             color:
-                                            controller
-                                                .taskNameController
-                                                .text
-                                                .trim()
-                                                .length >=
-                                                10
-                                                ? null
-                                                : Colors.grey,
+                                                controller
+                                                            .taskNameController
+                                                            .text
+                                                            .trim()
+                                                            .length >=
+                                                        10
+                                                    ? null
+                                                    : Colors.grey,
                                           ),
                                         ),
                                         const SizedBox(width: 26),
                                         GestureDetector(
                                           onTap:
-                                          controller.taskNameController.text
-                                              .trim()
-                                              .length >=
-                                              10
-                                              ? () {
-                                            controller
-                                                .toggleFavouriteFlag();
-                                            setModalState(() {});
-                                            debugPrint(
-                                              'Favourite Value: ${controller.isFavourite ? 'Y' : 'N'}',
-                                            );
-                                          }
-                                              : null,
+                                              controller.taskNameController.text
+                                                          .trim()
+                                                          .length >=
+                                                      10
+                                                  ? () {
+                                                    controller
+                                                        .toggleFavouriteFlag();
+                                                    setModalState(() {});
+                                                    debugPrint(
+                                                      'Favourite Value: ${controller.isFavourite ? 'Y' : 'N'}',
+                                                    );
+                                                  }
+                                                  : null,
                                           child: SvgPicture.asset(
                                             controller.isFavourite
                                                 ? AppImages.favouriteSvg
@@ -655,14 +669,14 @@ class _HomeState extends State<Home>
                                             height: 28,
                                             width: 28,
                                             color:
-                                            controller
-                                                .taskNameController
-                                                .text
-                                                .trim()
-                                                .length >=
-                                                10
-                                                ? null
-                                                : Colors.grey,
+                                                controller
+                                                            .taskNameController
+                                                            .text
+                                                            .trim()
+                                                            .length >=
+                                                        10
+                                                    ? null
+                                                    : Colors.grey,
                                           ),
                                         ),
                                       ],
@@ -671,354 +685,354 @@ class _HomeState extends State<Home>
                                   const SizedBox(height: 24),
                                   ValueListenableBuilder<TextEditingValue>(
                                     valueListenable:
-                                    controller.taskNameController,
+                                        controller.taskNameController,
                                     builder: (context, value, _) {
                                       final hasTaskName =
                                           value.text.trim().isNotEmpty;
                                       final isNameDuplicate =
-                                      hasTaskName
-                                          ? controller.isTaskNameExists(
-                                        value.text.trim(),
-                                      )
-                                          : false;
+                                          hasTaskName
+                                              ? controller.isTaskNameExists(
+                                                value.text.trim(),
+                                              )
+                                              : false;
                                       return ElevatedButton(
                                         onPressed:
-                                        (hasTaskName &&
-                                            !isNameDuplicate &&
-                                            !controller.isSaving)
-                                            ? () async {
-                                          // Validate form
-                                          if (!controller
-                                              .formKey
-                                              .currentState!
-                                              .validate())
-                                            return;
+                                            (hasTaskName &&
+                                                    !isNameDuplicate &&
+                                                    !controller.isSaving)
+                                                ? () async {
+                                                  // Validate form
+                                                  if (!controller
+                                                      .formKey
+                                                      .currentState!
+                                                      .validate())
+                                                    return;
 
-                                          // Track which validation steps are needed
-                                          bool
-                                          needsDescriptionValidation =
-                                              _isDescriptionSheetOpen ||
-                                                  _currentFormStep >= 1;
-                                          bool needsDateTimeValidation =
-                                              _isDateTimeSheetOpen ||
-                                                  _currentFormStep >= 2;
-                                          bool needsAssignToValidation =
-                                              _isAssignToSheetOpen ||
-                                                  _currentFormStep >= 3;
+                                                  // Track which validation steps are needed
+                                                  bool
+                                                  needsDescriptionValidation =
+                                                      _isDescriptionSheetOpen ||
+                                                      _currentFormStep >= 1;
+                                                  bool needsDateTimeValidation =
+                                                      _isDateTimeSheetOpen ||
+                                                      _currentFormStep >= 2;
+                                                  bool needsAssignToValidation =
+                                                      _isAssignToSheetOpen ||
+                                                      _currentFormStep >= 3;
 
-                                          // ✅ Step 1: Validate Description Sheet if it was opened
-                                          if (needsDescriptionValidation) {
-                                            // Check if description is provided
-                                            if (dashboardController
-                                                .detailsController
-                                                .text
-                                                .trim()
-                                                .isEmpty) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please enter task description",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: Description is empty",
-                                              );
-                                              return;
-                                            }
-                                            // Check if project is selected
-                                            if (dashboardController
-                                                .selectedProjectId ==
-                                                null ||
-                                                dashboardController
-                                                    .selectedProjectId!
-                                                    .isEmpty) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please select a project",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: Project not selected",
-                                              );
-                                              return;
-                                            }
-                                          }
+                                                  // ✅ Step 1: Validate Description Sheet if it was opened
+                                                  if (needsDescriptionValidation) {
+                                                    // Check if description is provided
+                                                    if (dashboardController
+                                                        .detailsController
+                                                        .text
+                                                        .trim()
+                                                        .isEmpty) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please enter task description",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: Description is empty",
+                                                      );
+                                                      return;
+                                                    }
+                                                    // Check if project is selected
+                                                    if (dashboardController
+                                                                .selectedProjectId ==
+                                                            null ||
+                                                        dashboardController
+                                                            .selectedProjectId!
+                                                            .isEmpty) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please select a project",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: Project not selected",
+                                                      );
+                                                      return;
+                                                    }
+                                                  }
 
-                                          // ✅ Step 2: Validate Date/Time Sheet if it was opened
-                                          if (needsDateTimeValidation) {
-                                            if (taskDetails
-                                                .dateTimeList
-                                                .isEmpty) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please select date range and estimated hours",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: Date range not selected",
-                                              );
-                                              return;
-                                            }
+                                                  // ✅ Step 2: Validate Date/Time Sheet if it was opened
+                                                  if (needsDateTimeValidation) {
+                                                    if (taskDetails
+                                                        .dateTimeList
+                                                        .isEmpty) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please select date range and estimated hours",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: Date range not selected",
+                                                      );
+                                                      return;
+                                                    }
 
-                                            final dateTimeModel =
-                                                taskDetails
-                                                    .dateTimeList
-                                                    .first;
+                                                    final dateTimeModel =
+                                                        taskDetails
+                                                            .dateTimeList
+                                                            .first;
 
-                                            // Check if start date is selected
-                                            if (dateTimeModel
-                                                .rangeStart ==
-                                                null) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please select start date",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: Start date not selected",
-                                              );
-                                              return;
-                                            }
+                                                    // Check if start date is selected
+                                                    if (dateTimeModel
+                                                            .rangeStart ==
+                                                        null) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please select start date",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: Start date not selected",
+                                                      );
+                                                      return;
+                                                    }
 
-                                            // Check if end date is selected
-                                            if (dateTimeModel
-                                                .rangeEnd ==
-                                                null) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please select end date",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: End date not selected",
-                                              );
-                                              return;
-                                            }
+                                                    // Check if end date is selected
+                                                    if (dateTimeModel
+                                                            .rangeEnd ==
+                                                        null) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please select end date",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: End date not selected",
+                                                      );
+                                                      return;
+                                                    }
 
-                                            // Check if estimated hours is provided
-                                            if (dateTimeModel
-                                                .estimatedHours ==
-                                                null ||
-                                                dateTimeModel
-                                                    .estimatedHours!
-                                                    .trim()
-                                                    .isEmpty) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please select end date",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: Estimated hours not entered",
-                                              );
-                                              return;
-                                            }
-                                          }
+                                                    // Check if estimated hours is provided
+                                                    if (dateTimeModel
+                                                                .estimatedHours ==
+                                                            null ||
+                                                        dateTimeModel
+                                                            .estimatedHours!
+                                                            .trim()
+                                                            .isEmpty) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please select end date",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: Estimated hours not entered",
+                                                      );
+                                                      return;
+                                                    }
+                                                  }
 
-                                          // ✅ Step 3: Validate AssignTo Sheet if it was opened
-                                          if (needsAssignToValidation) {
-                                            // Check if someone is assigned to the task
-                                            if (taskDetails
-                                                .selectedAssignToUserId ==
-                                                null ||
-                                                taskDetails
-                                                    .selectedAssignToUserId!
-                                                    .isEmpty) {
-                                              showOverlayMessage(
-                                                rootContext,
-                                                "Please assign the task to someone",
-                                              );
-                                              debugPrint(
-                                                "❌ Validation failed: Task not assigned to anyone",
-                                              );
-                                              return;
-                                            }
-                                          }
+                                                  // ✅ Step 3: Validate AssignTo Sheet if it was opened
+                                                  if (needsAssignToValidation) {
+                                                    // Check if someone is assigned to the task
+                                                    if (taskDetails
+                                                                .selectedAssignToUserId ==
+                                                            null ||
+                                                        taskDetails
+                                                            .selectedAssignToUserId!
+                                                            .isEmpty) {
+                                                      showOverlayMessage(
+                                                        rootContext,
+                                                        "Please assign the task to someone",
+                                                      );
+                                                      debugPrint(
+                                                        "❌ Validation failed: Task not assigned to anyone",
+                                                      );
+                                                      return;
+                                                    }
+                                                  }
 
-                                          // ✅ All validations passed, proceed with task creation
-                                          debugPrint(
-                                            "✅ All validations passed, creating task...",
-                                          );
+                                                  // ✅ All validations passed, proceed with task creation
+                                                  debugPrint(
+                                                    "✅ All validations passed, creating task...",
+                                                  );
 
-                                          String? fileBase64;
-                                          String? fileName;
+                                                  String? fileBase64;
+                                                  String? fileName;
 
-                                          if (dashboardController
-                                              .uploadedFile !=
-                                              null) {
-                                            fileBase64 =
-                                            await dashboardController
-                                                .getFileBase64();
-                                            fileName =
-                                                dashboardController
-                                                    .uploadedFile!
-                                                    .path
-                                                    .split('/')
-                                                    .last;
-                                          }
+                                                  if (dashboardController
+                                                          .uploadedFile !=
+                                                      null) {
+                                                    fileBase64 =
+                                                        await dashboardController
+                                                            .getFileBase64();
+                                                    fileName =
+                                                        dashboardController
+                                                            .uploadedFile!
+                                                            .path
+                                                            .split('/')
+                                                            .last;
+                                                  }
 
-                                          String? assignToUserId;
-                                          if (taskDetails
-                                              .selectedAssignToUserId !=
-                                              null &&
-                                              taskDetails
-                                                  .selectedAssignToUserId !=
-                                                  'self') {
-                                            assignToUserId =
-                                                taskDetails
-                                                    .selectedAssignToUserId;
-                                          }
+                                                  String? assignToUserId;
+                                                  if (taskDetails
+                                                              .selectedAssignToUserId !=
+                                                          null &&
+                                                      taskDetails
+                                                              .selectedAssignToUserId !=
+                                                          'self') {
+                                                    assignToUserId =
+                                                        taskDetails
+                                                            .selectedAssignToUserId;
+                                                  }
 
-                                          String? assignDate;
-                                          String? assignTime;
-                                          String? estimatedHours;
+                                                  String? assignDate;
+                                                  String? assignTime;
+                                                  String? estimatedHours;
 
-                                          if (taskDetails
-                                              .dateTimeList
-                                              .isNotEmpty) {
-                                            final dateTimeModel =
-                                                taskDetails
-                                                    .dateTimeList
-                                                    .first;
+                                                  if (taskDetails
+                                                      .dateTimeList
+                                                      .isNotEmpty) {
+                                                    final dateTimeModel =
+                                                        taskDetails
+                                                            .dateTimeList
+                                                            .first;
 
-                                            if (dateTimeModel
-                                                .rangeStart !=
-                                                null) {
-                                              assignDate = DateFormat(
-                                                'yyyy-MM-dd',
-                                              ).format(
-                                                dateTimeModel
-                                                    .rangeStart!,
-                                              );
-                                            }
-                                            if (dateTimeModel.time !=
-                                                null) {
-                                              assignTime =
-                                              '${dateTimeModel.time!.hour}:${dateTimeModel.time!.minute.toString().padLeft(2, '0')}';
-                                            }
-                                            estimatedHours =
-                                                dateTimeModel
-                                                    .estimatedHours;
-                                          }
+                                                    if (dateTimeModel
+                                                            .rangeStart !=
+                                                        null) {
+                                                      assignDate = DateFormat(
+                                                        'yyyy-MM-dd',
+                                                      ).format(
+                                                        dateTimeModel
+                                                            .rangeStart!,
+                                                      );
+                                                    }
+                                                    if (dateTimeModel.time !=
+                                                        null) {
+                                                      assignTime =
+                                                          '${dateTimeModel.time!.hour}:${dateTimeModel.time!.minute.toString().padLeft(2, '0')}';
+                                                    }
+                                                    estimatedHours =
+                                                        dateTimeModel
+                                                            .estimatedHours;
+                                                  }
 
-                                          List<String>?
-                                          notificationUserIds;
-                                          if (taskDetails
-                                              .taggedUsers
-                                              .isNotEmpty) {
-                                            notificationUserIds =
-                                                taskDetails.taggedUsers;
-                                          }
+                                                  List<String>?
+                                                  notificationUserIds;
+                                                  if (taskDetails
+                                                      .taggedUsers
+                                                      .isNotEmpty) {
+                                                    notificationUserIds =
+                                                        taskDetails.taggedUsers;
+                                                  }
 
-                                          String? projectId;
-                                          if (dashboardController
-                                              .selectedProjectId !=
-                                              null &&
-                                              dashboardController
-                                                  .selectedProjectId!
-                                                  .isNotEmpty) {
-                                            projectId =
-                                                dashboardController
-                                                    .selectedProjectId;
-                                          }
+                                                  String? projectId;
+                                                  if (dashboardController
+                                                              .selectedProjectId !=
+                                                          null &&
+                                                      dashboardController
+                                                          .selectedProjectId!
+                                                          .isNotEmpty) {
+                                                    projectId =
+                                                        dashboardController
+                                                            .selectedProjectId;
+                                                  }
 
-                                          String? priorityId;
-                                          if (dashboardController
-                                              .selectedPriority?['id'] !=
-                                              null) {
-                                            priorityId =
-                                                dashboardController
-                                                    .selectedPriority?['id']
-                                                    ?.toString();
-                                          }
+                                                  String? priorityId;
+                                                  if (dashboardController
+                                                          .selectedPriority?['id'] !=
+                                                      null) {
+                                                    priorityId =
+                                                        dashboardController
+                                                            .selectedPriority?['id']
+                                                            ?.toString();
+                                                  }
 
-                                          String? description;
-                                          if (dashboardController
-                                              .detailsController
-                                              .text
-                                              .isNotEmpty) {
-                                            description =
-                                                dashboardController
-                                                    .detailsController
-                                                    .text;
-                                          }
+                                                  String? description;
+                                                  if (dashboardController
+                                                      .detailsController
+                                                      .text
+                                                      .isNotEmpty) {
+                                                    description =
+                                                        dashboardController
+                                                            .detailsController
+                                                            .text;
+                                                  }
 
-                                          final success = await controller.addNewTask(
-                                            token,
-                                            userId: userId,
-                                            description:
-                                            description ?? '',
-                                            projectId: projectId,
-                                            priorityId: priorityId,
-                                            fileBase64: fileBase64,
-                                            fileName: fileName,
-                                            assignToUserId:
-                                            assignToUserId,
-                                            assignDate: assignDate,
-                                            assignTime: assignTime,
-                                            notificationUserIds:
-                                            notificationUserIds,
-                                            estimatedHours:
-                                            estimatedHours,
-                                            estStartDate:
-                                            taskDetails
-                                                .dateTimeList
-                                                .isNotEmpty &&
-                                                taskDetails
-                                                    .dateTimeList
-                                                    .first
-                                                    .rangeStart !=
-                                                    null
-                                                ? DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(
-                                              taskDetails
-                                                  .dateTimeList
-                                                  .first
-                                                  .rangeStart!,
-                                            )
+                                                  final success = await controller.addNewTask(
+                                                    token,
+                                                    userId: userId,
+                                                    description:
+                                                        description ?? '',
+                                                    projectId: projectId,
+                                                    priorityId: priorityId,
+                                                    fileBase64: fileBase64,
+                                                    fileName: fileName,
+                                                    assignToUserId:
+                                                        assignToUserId,
+                                                    assignDate: assignDate,
+                                                    assignTime: assignTime,
+                                                    notificationUserIds:
+                                                        notificationUserIds,
+                                                    estimatedHours:
+                                                        estimatedHours,
+                                                    estStartDate:
+                                                        taskDetails
+                                                                    .dateTimeList
+                                                                    .isNotEmpty &&
+                                                                taskDetails
+                                                                        .dateTimeList
+                                                                        .first
+                                                                        .rangeStart !=
+                                                                    null
+                                                            ? DateFormat(
+                                                              'yyyy-MM-dd',
+                                                            ).format(
+                                                              taskDetails
+                                                                  .dateTimeList
+                                                                  .first
+                                                                  .rangeStart!,
+                                                            )
+                                                            : null,
+                                                    estEndDate:
+                                                        taskDetails
+                                                                    .dateTimeList
+                                                                    .isNotEmpty &&
+                                                                taskDetails
+                                                                        .dateTimeList
+                                                                        .first
+                                                                        .rangeEnd !=
+                                                                    null
+                                                            ? DateFormat(
+                                                              'yyyy-MM-dd',
+                                                            ).format(
+                                                              taskDetails
+                                                                  .dateTimeList
+                                                                  .first
+                                                                  .rangeEnd!,
+                                                            )
+                                                            : null,
+                                                  );
+
+                                                  if (success) {
+                                                    Navigator.pop(context);
+
+                                                    // Reset all form data after successful task creation
+                                                    _resetAllFormData();
+
+                                                    CustomSnackBar.successSnackBar(
+                                                      context,
+                                                      'Task created successfully',
+                                                    );
+
+                                                    await Provider.of<
+                                                      OpenTaskController
+                                                    >(
+                                                      context,
+                                                      listen: false,
+                                                    ).fetchOpenTasks(
+                                                      userId: userId,
+                                                    );
+                                                    setState(() {});
+                                                  }
+                                                }
                                                 : null,
-                                            estEndDate:
-                                            taskDetails
-                                                .dateTimeList
-                                                .isNotEmpty &&
-                                                taskDetails
-                                                    .dateTimeList
-                                                    .first
-                                                    .rangeEnd !=
-                                                    null
-                                                ? DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(
-                                              taskDetails
-                                                  .dateTimeList
-                                                  .first
-                                                  .rangeEnd!,
-                                            )
-                                                : null,
-                                          );
-
-                                          if (success) {
-                                            Navigator.pop(context);
-
-                                            // Reset all form data after successful task creation
-                                            _resetAllFormData();
-
-                                            CustomSnackBar.successSnackBar(
-                                              context,
-                                              'Task created successfully',
-                                            );
-
-                                            await Provider.of<
-                                                OpenTaskController
-                                            >(
-                                              context,
-                                              listen: false,
-                                            ).fetchOpenTasks(
-                                              userId: userId!,
-                                            );
-                                            setState(() {});
-                                          }
-                                        }
-                                            : null,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor:
-                                          controller.isSaving
-                                              ? Colors.grey
-                                              : AppColors.appBar,
+                                              controller.isSaving
+                                                  ? Colors.grey
+                                                  : AppColors.appBar,
                                           minimumSize: const Size(
                                             double.infinity,
                                             50,
@@ -1030,36 +1044,36 @@ class _HomeState extends State<Home>
                                           ),
                                         ),
                                         child:
-                                        controller.isSaving
-                                            ? const Center(
-                                          child: SizedBox(
-                                            height: 22,
-                                            width: 22,
-                                            child:
-                                            CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 2.5,
-                                            ),
-                                          ),
-                                        )
-                                            : Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceBetween,
-                                          children: const [
-                                            Text(
-                                              'Save',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            SizedBox(width: 8),
-                                            Icon(
-                                              Icons.arrow_forward,
-                                              color: Colors.white,
-                                            ),
-                                          ],
-                                        ),
+                                            controller.isSaving
+                                                ? const Center(
+                                                  child: SizedBox(
+                                                    height: 22,
+                                                    width: 22,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          color: Colors.white,
+                                                          strokeWidth: 2.5,
+                                                        ),
+                                                  ),
+                                                )
+                                                : Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: const [
+                                                    Text(
+                                                      'Save',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Icon(
+                                                      Icons.arrow_forward,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ],
+                                                ),
                                       );
                                     },
                                   ),
@@ -1091,10 +1105,10 @@ class _HomeState extends State<Home>
   }
 
   void _showDescriptionBottomSheet(
-      BuildContext parentContext,
-      DashboardController dashboardController,
-      TaskDetailController taskDetails,
-      ) {
+    BuildContext parentContext,
+    DashboardController dashboardController,
+    TaskDetailController taskDetails,
+  ) {
     bool isDetailsExpanded = true;
     File? _uploadedFile;
 
@@ -1123,7 +1137,9 @@ class _HomeState extends State<Home>
           child: Padding(
             padding: const EdgeInsets.only(top: 150),
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
               child: Scaffold(
                 backgroundColor: Colors.white,
                 body: StatefulBuilder(
@@ -1156,15 +1172,15 @@ class _HomeState extends State<Home>
                               children: [
                                 addDescriptionCollapse(
                                   selectedProject:
-                                  dashboardController.selectedProjectName,
+                                      dashboardController.selectedProjectName,
                                   projectList: dashboardController.projectList,
                                   onChange: (value) {
                                     final selected = dashboardController
                                         .projectList
                                         .firstWhere(
                                           (p) => p['name'] == value,
-                                      orElse: () => {},
-                                    );
+                                          orElse: () => {},
+                                        );
                                     if (selected.isNotEmpty) {
                                       dashboardController.setSelectedProject(
                                         selected['id'],
@@ -1182,7 +1198,7 @@ class _HomeState extends State<Home>
                                   img: AppImages.descriptionSvg,
                                   hintText: 'Enter task description here',
                                   controller:
-                                  dashboardController.detailsController,
+                                      dashboardController.detailsController,
                                   maxLines: 5,
                                   borderColor: Colors.grey.shade400,
                                   backgroundColor: Colors.white,
@@ -1199,104 +1215,112 @@ class _HomeState extends State<Home>
                                       context: context,
                                       builder:
                                           (context) => SafeArea(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            ListTile(
-                                              leading: const Icon(
-                                                Icons.camera_alt,
-                                              ),
-                                              title: const Text('Take Photo'),
-                                              onTap: () async {
-                                                Navigator.pop(
-                                                  context,
-                                                ); // close the sheet
-
-                                                final picker = ImagePicker();
-                                                final XFile? photo =
-                                                await picker.pickImage(
-                                                  source:
-                                                  ImageSource.camera,
-                                                  imageQuality: 80,
-                                                );
-
-                                                if (photo != null) {
-                                                  final file = File(
-                                                    photo.path,
-                                                  );
-                                                  final fileSizeMB =
-                                                      file.lengthSync() /
-                                                          (1024 * 1024);
-                                                  if (fileSizeMB > 25) {
-                                                    ScaffoldMessenger.of(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                ListTile(
+                                                  leading: const Icon(
+                                                    Icons.camera_alt,
+                                                  ),
+                                                  title: const Text(
+                                                    'Take Photo',
+                                                  ),
+                                                  onTap: () async {
+                                                    Navigator.pop(
                                                       context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          'File size should not exceed 25 MB',
-                                                        ),
-                                                      ),
-                                                    );
-                                                    return;
-                                                  }
+                                                    ); // close the sheet
 
-                                                  setModalState(() {
-                                                    dashboardController
-                                                        .uploadedFile = file;
-                                                  });
-                                                }
-                                              },
+                                                    final picker =
+                                                        ImagePicker();
+                                                    final XFile? photo =
+                                                        await picker.pickImage(
+                                                          source:
+                                                              ImageSource
+                                                                  .camera,
+                                                          imageQuality: 80,
+                                                        );
+
+                                                    if (photo != null) {
+                                                      final file = File(
+                                                        photo.path,
+                                                      );
+                                                      final fileSizeMB =
+                                                          file.lengthSync() /
+                                                          (1024 * 1024);
+                                                      if (fileSizeMB > 25) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'File size should not exceed 25 MB',
+                                                            ),
+                                                          ),
+                                                        );
+                                                        return;
+                                                      }
+
+                                                      setModalState(() {
+                                                        dashboardController
+                                                                .uploadedFile =
+                                                            file;
+                                                      });
+                                                    }
+                                                  },
+                                                ),
+                                                ListTile(
+                                                  leading: const Icon(
+                                                    Icons.photo_library,
+                                                  ),
+                                                  title: const Text(
+                                                    'Choose from Gallery',
+                                                  ),
+                                                  onTap: () async {
+                                                    Navigator.pop(context);
+                                                    final file =
+                                                        await dashboardController
+                                                            .pickAndUploadFile(
+                                                              context,
+                                                            );
+                                                    if (file != null) {
+                                                      setModalState(() {
+                                                        dashboardController
+                                                                .uploadedFile =
+                                                            file;
+                                                      });
+                                                    }
+                                                  },
+                                                ),
+                                                ListTile(
+                                                  leading: const Icon(
+                                                    Icons.insert_drive_file,
+                                                  ),
+                                                  title: const Text(
+                                                    'Choose File',
+                                                  ),
+                                                  onTap: () async {
+                                                    Navigator.pop(context);
+                                                    final file =
+                                                        await dashboardController
+                                                            .pickAndUploadFile(
+                                                              context,
+                                                            );
+                                                    if (file != null) {
+                                                      setModalState(() {
+                                                        dashboardController
+                                                                .uploadedFile =
+                                                            file;
+                                                      });
+                                                    }
+                                                  },
+                                                ),
+                                              ],
                                             ),
-                                            ListTile(
-                                              leading: const Icon(
-                                                Icons.photo_library,
-                                              ),
-                                              title: const Text(
-                                                'Choose from Gallery',
-                                              ),
-                                              onTap: () async {
-                                                Navigator.pop(context);
-                                                final file =
-                                                await dashboardController
-                                                    .pickAndUploadFile(
-                                                  context,
-                                                );
-                                                if (file != null) {
-                                                  setModalState(() {
-                                                    dashboardController
-                                                        .uploadedFile = file;
-                                                  });
-                                                }
-                                              },
-                                            ),
-                                            ListTile(
-                                              leading: const Icon(
-                                                Icons.insert_drive_file,
-                                              ),
-                                              title: const Text(
-                                                'Choose File',
-                                              ),
-                                              onTap: () async {
-                                                Navigator.pop(context);
-                                                final file =
-                                                await dashboardController
-                                                    .pickAndUploadFile(
-                                                  context,
-                                                );
-                                                if (file != null) {
-                                                  setModalState(() {
-                                                    dashboardController
-                                                        .uploadedFile = file;
-                                                  });
-                                                }
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                          ),
                                     );
                                   },
-                                  uploadedFile: dashboardController.uploadedFile,
+                                  uploadedFile:
+                                      dashboardController.uploadedFile,
                                   onDeleteFile: () {
                                     dashboardController.deleteUploadedFile();
                                     setModalState(() {});
@@ -1304,8 +1328,8 @@ class _HomeState extends State<Home>
 
                                   showCollapseIcon: false,
                                   selectedPriority:
-                                  dashboardController
-                                      .selectedPriority?['value'] ??
+                                      dashboardController
+                                          .selectedPriority?['value'] ??
                                       '',
                                   onPriorityChange: (value) {
                                     dashboardController.selectPriority(value);
@@ -1317,44 +1341,21 @@ class _HomeState extends State<Home>
                             ),
                             const SizedBox(height: 20),
                             Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  //
+                              padding: const EdgeInsets.only(top: 10.0),
+                              child: bottomButton(
+                                title: 'Next',
+                                subtitle: 'Back',
+                                icon: Icons.arrow_forward,
+                                icons: Icons.arrow_back,
+                                padding: 0.0,
+                                onPress: () {
                                   final description =
-                                      dashboardController.detailsController.text;
+                                      dashboardController
+                                          .detailsController
+                                          .text;
                                   final selectedProject =
                                       dashboardController.selectedProjectName;
-                                  //  final selectedPriority = dashboardController.selectedPriority;
-                                  final scaffoldContext = context;
-                                  // debugPrint the final selected priority before closing
-                                  debugPrint(
-                                    '📝 Description: ${dashboardController.detailsController.text}',
-                                  );
-                                  debugPrint(
-                                    '🏗 Project: ${dashboardController.selectedProjectName}',
-                                  );
-                                  debugPrint(
-                                    '❗ Priority: ${dashboardController.selectedPriority?['name']}',
-                                  );
-                                  if (dashboardController.uploadedFile != null) {
-                                    debugPrint(
-                                      '📎 File: ${dashboardController.uploadedFile?.path}',
-                                    );
-                                  }
-                                  if (dashboardController.selectedPriority !=
-                                      null) {
-                                    debugPrint('✅ Final Selected Priority:');
-                                    debugPrint(
-                                      '➡ ID: ${dashboardController.selectedPriority!['id']}',
-                                    );
-                                    debugPrint(
-                                      '➡ Name: ${dashboardController.selectedPriority!['name']}',
-                                    );
-                                    debugPrint(
-                                      '➡ Value: ${dashboardController.selectedPriority!['value']}',
-                                    );
-                                  }
+
                                   // ✅ Validation checks
                                   if (description.isEmpty) {
                                     CustomSnackBar.errorSnackBar(
@@ -1372,37 +1373,32 @@ class _HomeState extends State<Home>
                                     );
                                     return;
                                   }
-                                  // if (dashboardController.uploadedFile == null) {
-                                  //   CustomSnackBar.errorSnackBar(context, "Please upload a file");
-                                  //   return;
-                                  // }
 
-                                  if (dashboardController.selectedPriority == null) {
-                                    CustomSnackBar.errorSnackBar(context, "Please select a priority");
+                                  if (dashboardController.selectedPriority ==
+                                      null) {
+                                    CustomSnackBar.errorSnackBar(
+                                      context,
+                                      "Please select a priority",
+                                    );
                                     return;
                                   }
+
                                   Navigator.pop(context);
                                   _isDescriptionSheetOpen = false;
                                   _currentFormStep = 2;
 
                                   // Open the next bottom sheet after the current one is fully closed
                                   WidgetsBinding.instance.addPostFrameCallback((
-                                      _,
-                                      ) {
+                                    _,
+                                  ) {
                                     _showProjectBottomSheetDate(parentContext);
                                   });
                                 },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.appBar,
-                                  minimumSize: const Size(double.infinity, 50),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Next',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _isDescriptionSheetOpen = false;
+                                  _currentFormStep = 0;
+                                },
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -1447,9 +1443,9 @@ class _HomeState extends State<Home>
       builder: (context) {
         // Initialize with existing values or defaults
         DateTime? selectedDate =
-        taskDetail.dateTimeList.isNotEmpty
-            ? taskDetail.dateTimeList[0].date
-            : DateTime.now();
+            taskDetail.dateTimeList.isNotEmpty
+                ? taskDetail.dateTimeList[0].date
+                : DateTime.now();
 
         Map<String, dynamic>? repeatData;
 
@@ -1470,9 +1466,9 @@ class _HomeState extends State<Home>
                   right: 8,
                   top: 16,
                   bottom:
-                  MediaQuery.of(
-                    context,
-                  ).viewInsets.bottom, // ✅ already handling keyboard
+                      MediaQuery.of(
+                        context,
+                      ).viewInsets.bottom, // ✅ already handling keyboard
                 ),
                 child: StatefulBuilder(
                   builder: (context, setModalState) {
@@ -1531,7 +1527,7 @@ class _HomeState extends State<Home>
                                     _focusedDay = focusedDay;
 
                                     if (_rangeSelectionMode ==
-                                        RangeSelectionMode.toggledOn &&
+                                            RangeSelectionMode.toggledOn &&
                                         _rangeStart != null &&
                                         _rangeEnd == null &&
                                         selectedDay.isAfter(_rangeStart!)) {
@@ -1589,14 +1585,26 @@ class _HomeState extends State<Home>
                                     children: [
                                       SvgPicture.asset(AppImages.calendarSvg),
                                       SizedBox(width: 11),
-                                      Text(
-                                        'Selected Range',
-                                        style: GoogleFonts.lato(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.black,
+                                      RichText(
+                                        text: TextSpan(
+                                          text: 'Selected Range ',
+                                          style: GoogleFonts.lato(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                          ),
+                                          children: const [
+                                            TextSpan(
+                                              text: '*',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
+                                      )
                                     ],
                                   ),
                                   const SizedBox(height: 16),
@@ -1628,14 +1636,26 @@ class _HomeState extends State<Home>
                                     children: [
                                       SvgPicture.asset(AppImages.ClockSvg),
                                       SizedBox(width: 11),
-                                      Text(
-                                        'Estimated Hours',
-                                        style: GoogleFonts.lato(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.black,
+                                      RichText(
+                                        text: TextSpan(
+                                          text: 'Estimated Hours ',
+                                          style: GoogleFonts.lato(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                          ),
+                                          children: const [
+                                            TextSpan(
+                                              text: '*',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
+                                      )
                                     ],
                                   ),
                                   SizedBox(height: 7),
@@ -1656,10 +1676,10 @@ class _HomeState extends State<Home>
                                     decoration: InputDecoration(
                                       counterText: '',
                                       contentPadding:
-                                      const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 16,
-                                      ),
+                                          const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                            horizontal: 16,
+                                          ),
                                       filled: true,
                                       fillColor: Colors.white.withOpacity(0.1),
                                       enabledBorder: OutlineInputBorder(
@@ -1801,21 +1821,21 @@ class _HomeState extends State<Home>
                                         context: context,
                                         builder:
                                             (context) => AlertDialog(
-                                          title: const Text(
-                                            "Missing Information",
-                                          ),
-                                          content: const Text(
-                                            "Please select a Start Date before proceeding.",
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text("OK"),
+                                              title: const Text(
+                                                "Missing Information",
+                                              ),
+                                              content: const Text(
+                                                "Please select a Start Date before proceeding.",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text("OK"),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
                                       );
                                       return;
                                     }
@@ -1826,21 +1846,21 @@ class _HomeState extends State<Home>
                                         context: context,
                                         builder:
                                             (context) => AlertDialog(
-                                          title: const Text(
-                                            "Missing Information",
-                                          ),
-                                          content: const Text(
-                                            "Please select an End Date before proceeding.",
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text("OK"),
+                                              title: const Text(
+                                                "Missing Information",
+                                              ),
+                                              content: const Text(
+                                                "Please select an End Date before proceeding.",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text("OK"),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
                                       );
                                       return;
                                     }
@@ -1864,7 +1884,7 @@ class _HomeState extends State<Home>
                                       rangeStart: rangeStart,
                                       rangeEnd: rangeEnd,
                                       estimatedHours:
-                                      estimatedHoursController.text,
+                                          estimatedHoursController.text,
                                     );
 
                                     if (taskDetail.dateTimeList.isEmpty) {
@@ -1928,17 +1948,23 @@ class _HomeState extends State<Home>
 
     // Initialize with existing values from controller
     bool isAssignToSelf = taskDetail.selectedAssignToUserId == 'self';
-    String? selectedAssignToId = taskDetail.selectedAssignToUserId == 'self'
-        ? null
-        : taskDetail.selectedAssignToUserId;
-    String? selectedAssignToName = taskDetail.selectedAssignToUserId == 'self'
-        ? null
-        : taskDetail.taggedUserDetails.firstWhere(
-          (user) => user['user_id'].toString() == taskDetail.selectedAssignToUserId,
-      orElse: () => {},
-    )['user_name'];
+    String? selectedAssignToId =
+        taskDetail.selectedAssignToUserId == 'self'
+            ? null
+            : taskDetail.selectedAssignToUserId;
+    String? selectedAssignToName =
+        taskDetail.selectedAssignToUserId == 'self'
+            ? null
+            : taskDetail.taggedUserDetails.firstWhere(
+              (user) =>
+                  user['user_id'].toString() ==
+                  taskDetail.selectedAssignToUserId,
+              orElse: () => {},
+            )['user_name'];
 
-    List<Map<String, dynamic>> selectedTagUsers = List.from(taskDetail.taggedUserDetails);
+    List<Map<String, dynamic>> selectedTagUsers = List.from(
+      taskDetail.taggedUserDetails,
+    );
     List<String> selectedTagUserIds = List.from(taskDetail.taggedUsers);
 
     // Fetch user list
@@ -1951,404 +1977,239 @@ class _HomeState extends State<Home>
     }
 
     return showModalBottomSheet(
-        backgroundColor: Colors.transparent,
-        context: parentContext,
-        isScrollControlled: true,
-        isDismissible: false,
-        enableDrag: false,
-        builder: (context) {
-          return DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.6,
-            minChildSize: 0.2,
-            maxChildSize: 0.8,
-            builder: (_, controller) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.height * 0.1,
+      backgroundColor: Colors.transparent,
+      context: parentContext,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.2,
+          maxChildSize: 0.8,
+          builder: (_, controller) {
+            return Padding(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).size.height * 0.1,
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                  child: Scaffold(
-                    body: StatefulBuilder(
-                      builder: (context, setModalState) {
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom,
-                            top: 30,
-                            left: 16,
-                            right: 16,
-                          ),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Center(
-                                        child: Text(
-                                          'Assign To',
-                                          style: GoogleFonts.lato(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                child: Scaffold(
+                  body: StatefulBuilder(
+                    builder: (context, setModalState) {
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                          top: 30,
+                          left: 16,
+                          right: 16,
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        'Assign To',
+                                        style: GoogleFonts.lato(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                CheckboxListTile(
-                                  value: isAssignToSelf,
-                                  onChanged: (value) {
-                                    setModalState(() {
-                                      isAssignToSelf = value ?? false;
-                                      if (isAssignToSelf) {
-                                        selectedAssignToId = null;
-                                        selectedAssignToName = null;
-                                      }
-                                    });
-                                  },
-                                  title: Text(
-                                    'Assign To Self',
-                                    style: GoogleFonts.lato(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.black,
-                                    ),
                                   ),
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                  contentPadding: const EdgeInsets.only(
-                                    left: -30,
-                                    right: 0,
-                                  ),
-                                  visualDensity: const VisualDensity(
-                                    horizontal: -4,
-                                    vertical: 0,
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              CheckboxListTile(
+                                value: isAssignToSelf,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    isAssignToSelf = value ?? false;
+                                    if (isAssignToSelf) {
+                                      selectedAssignToId = null;
+                                      selectedAssignToName = null;
+                                    }
+                                  });
+                                },
+                                title: Text(
+                                  'Assign To Self',
+                                  style: GoogleFonts.lato(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.black,
                                   ),
                                 ),
-                                const SizedBox(height: 20),
-                                if (!isAssignToSelf)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 8.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            SvgPicture.asset(
-                                              AppImages.assignToSvg,
-                                              color: AppColors.black,
-                                            ),
-                                            const SizedBox(width: 7),
-                                            Text(
-                                              'Assign To',
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                contentPadding: const EdgeInsets.only(
+                                  left: -30,
+                                  right: 0,
+                                ),
+                                visualDensity: const VisualDensity(
+                                  horizontal: -4,
+                                  vertical: 0,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              if (!isAssignToSelf)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          SvgPicture.asset(
+                                            AppImages.assignToSvg,
+                                            color: AppColors.black,
+                                          ),
+                                          const SizedBox(width: 7),
+                                          RichText(
+                                            text: TextSpan(
+                                              text: 'Assign To ',
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
                                                 color: AppColors.black,
                                               ),
+                                              children: const [
+                                                TextSpan(
+                                                  text: '*',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 17,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 10),
-
-                                        DropdownSearch<Map<String, dynamic>>(
-                                          items: (
-                                              filter,
-                                              infiniteScrollProps,
-                                              ) async {
-                                            return userList
-                                                .where(
-                                                  (user) => user['user_name']
-                                                  .toString()
-                                                  .toLowerCase()
-                                                  .contains(
-                                                filter?.toLowerCase() ??
-                                                    '',
-                                              ),
-                                            )
-                                                .toList();
-                                          },
-                                          selectedItem: selectedAssignToId != null
-                                              ? userList.firstWhere(
-                                                (user) =>
-                                            user['user_id'].toString() ==
-                                                selectedAssignToId,
-                                            orElse: () => {},
                                           )
-                                              : null,
-                                          itemAsString: (user) => user['user_name'] ?? '',
-                                          compareFn: (item, selectedItem) =>
-                                          item['user_id'].toString() ==
-                                              selectedItem['user_id'].toString(),
-                                          onChanged: (user) {
-                                            if (user != null) {
-                                              setModalState(() {
-                                                selectedAssignToId = user['user_id'].toString();
-                                                selectedAssignToName = user['user_name'];
-                                              });
-                                            }
-                                          },
-                                          key: assignedDropdownSearchKey,
-                                          popupProps: PopupProps.modalBottomSheet(
-                                            showSearchBox: true,
-                                            constraints: BoxConstraints(
-                                              maxHeight: MediaQuery.of(context).size.height * 0.95,
-                                            ),
-                                            itemBuilder: (
-                                                context,
-                                                item,
-                                                isDisabled,
-                                                isSelected,
-                                                ) {
-                                              final bool selected = selectedAssignToId == item['user_id'].toString();
-
-                                              return InkWell(
-                                                onTap: () {
-                                                  setModalState(() {
-                                                    selectedAssignToId = item['user_id'].toString();
-                                                    selectedAssignToName = item['user_name'];
-                                                  });
-
-                                                  assignedDropdownSearchKey.currentState?.changeSelectedItem(item);
-                                                  Navigator.pop(context); // Close the dropdown
-                                                },
-                                                child: ListTile(
-                                                  leading: Stack(
-                                                    children: [
-                                                      CircleAvatar(
-                                                        radius: 22,
-                                                        backgroundColor: selected ? Colors.blue : Colors.grey.shade200,
-                                                        child: item['user_avatar'] == null
-                                                            ? Icon(
-                                                          Icons.person,
-                                                          color: selected ? Colors.white : Colors.grey.shade400,
-                                                          size: 27,
-                                                        )
-                                                            : null,
-                                                        backgroundImage: item['user_avatar'] != null
-                                                            ? NetworkImage(item['user_avatar'])
-                                                            : null,
-                                                      ),
-                                                      if (selected)
-                                                        Positioned(
-                                                          top: -2,
-                                                          right: -2,
-                                                          child: Container(
-                                                            width: 16,
-                                                            height: 16,
-                                                            decoration: const BoxDecoration(
-                                                              color: Colors.white,
-                                                              shape: BoxShape.circle,
-                                                            ),
-                                                            child: const Icon(
-                                                              Icons.check_circle,
-                                                              color: Color(0xFF1EC31A),
-                                                              size: 16,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                  title: Text(
-                                                    item['user_name'] ?? '',
-                                                    style: TextStyle(
-                                                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                                      color: selected ? Colors.blue : Colors.black,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            searchFieldProps: TextFieldProps(
-                                              padding: const EdgeInsets.symmetric(
-                                                vertical: 30,
-                                                horizontal: 17,
-                                              ),
-                                              decoration: InputDecoration(
-                                                hintText: "Search...",
-                                                prefixIcon: Icon(Icons.search),
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(10),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          decoratorProps: DropDownDecoratorProps(
-                                            decoration: InputDecoration(
-                                              hintStyle: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w300,
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                              hintText: AppStrings.placeHolder,
-                                              border: OutlineInputBorder(
-                                                borderSide: BorderSide(
-                                                  color: Colors.grey.shade400,
-                                                  width: 0.8,
-                                                ),
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderSide: BorderSide(
-                                                  color: Colors.grey.shade400,
-                                                  width: 0.8,
-                                                ),
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderSide: BorderSide(
-                                                  color: Colors.grey.shade500,
-                                                  width: 0.8,
-                                                ),
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              contentPadding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 14,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                const SizedBox(height: 30),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          SvgPicture.asset(
-                                            AppImages.tagUserSvg,
-                                            color: AppColors.black,
-                                          ),
-                                          const SizedBox(width: 7),
-                                          Text(
-                                            "Tag User's for Notification",
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.black,
-                                            ),
-                                          ),
                                         ],
                                       ),
                                       const SizedBox(height: 10),
 
-                                      DropdownSearch<Map<String, dynamic>>.multiSelection(
-                                        key: dropdownSearchKey,
-                                        items: (filter, _) async {
-                                          final filtered = userList
+                                      DropdownSearch<Map<String, dynamic>>(
+                                        items: (
+                                          filter,
+                                          infiniteScrollProps,
+                                        ) async {
+                                          return userList
                                               .where(
                                                 (user) => user['user_name']
-                                                .toLowerCase()
-                                                .contains(
-                                              filter?.toLowerCase() ?? '',
-                                            ),
-                                          )
+                                                    .toString()
+                                                    .toLowerCase()
+                                                    .contains(
+                                                      filter?.toLowerCase() ??
+                                                          '',
+                                                    ),
+                                              )
                                               .toList();
-
-                                          final selectedIds = selectedTagUsers
-                                              .map((u) => u['user_id'].toString())
-                                              .toSet();
-
-                                          filtered.sort((a, b) {
-                                            final aSelected = selectedIds.contains(a['user_id'].toString()) ? 0 : 1;
-                                            final bSelected = selectedIds.contains(b['user_id'].toString()) ? 0 : 1;
-                                            return aSelected.compareTo(bSelected);
-                                          });
-
-                                          return filtered;
                                         },
-                                        selectedItems: selectedTagUsers,
-                                        itemAsString: (user) => user['user_name'],
-                                        dropdownBuilder: (context, selectedItems) {
-                                          return Wrap(
-                                            spacing: 6,
-                                            children: selectedTagUsers.map((user) {
-                                              return Chip(
-                                                label: Text(user['user_name']),
-                                                onDeleted: () {
-                                                  setModalState(() {
-                                                    selectedTagUsers.remove(user);
-                                                    selectedTagUserIds.removeWhere(
-                                                          (id) => id == user['user_id'].toString(),
-                                                    );
-                                                  });
-                                                  dropdownSearchKey.currentState?.changeSelectedItems(selectedTagUsers);
-                                                },
-                                              );
-                                            }).toList(),
-                                          );
+                                        selectedItem:
+                                            selectedAssignToId != null
+                                                ? userList.firstWhere(
+                                                  (user) =>
+                                                      user['user_id']
+                                                          .toString() ==
+                                                      selectedAssignToId,
+                                                  orElse: () => {},
+                                                )
+                                                : null,
+                                        itemAsString:
+                                            (user) => user['user_name'] ?? '',
+                                        compareFn:
+                                            (item, selectedItem) =>
+                                                item['user_id'].toString() ==
+                                                selectedItem['user_id']
+                                                    .toString(),
+                                        onChanged: (user) {
+                                          if (user != null) {
+                                            setModalState(() {
+                                              selectedAssignToId =
+                                                  user['user_id'].toString();
+                                              selectedAssignToName =
+                                                  user['user_name'];
+                                            });
+                                          }
                                         },
-                                        onChanged: (List<Map<String, dynamic>> users) {
-                                          setModalState(() {
-                                            selectedTagUsers = users;
-                                            selectedTagUserIds = users
-                                                .map((e) => e['user_id'].toString())
-                                                .where((id) => id.isNotEmpty)
-                                                .toList();
-                                          });
-                                        },
-                                        popupProps: PopupPropsMultiSelection.modalBottomSheet(
+                                        key: assignedDropdownSearchKey,
+                                        popupProps: PopupProps.modalBottomSheet(
                                           showSearchBox: true,
-                                          onItemRemoved: (selectedItems, removedItem) {
-                                            setModalState(() {
-                                              selectedTagUserIds.remove(removedItem['user_id'].toString());
-                                              selectedTagUsers.removeWhere(
-                                                    (user) => user['user_id'].toString() == removedItem['user_id'].toString(),
-                                              );
-                                            });
-                                          },
-                                          onItemAdded: (selectedItems, addedItem) {
-                                            setModalState(() {
-                                              selectedTagUserIds.add(addedItem['user_id'].toString());
-                                              selectedTagUsers.add(addedItem);
-                                            });
-                                          },
-                                          itemBuilder: (context, item, isDisabled, isSelected) {
-                                            final bool selected = selectedTagUserIds.contains(item['user_id'].toString());
+                                          constraints: BoxConstraints(
+                                            maxHeight:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.height *
+                                                0.95,
+                                          ),
+                                          itemBuilder: (
+                                            context,
+                                            item,
+                                            isDisabled,
+                                            isSelected,
+                                          ) {
+                                            final bool selected =
+                                                selectedAssignToId ==
+                                                item['user_id'].toString();
 
                                             return InkWell(
                                               onTap: () {
                                                 setModalState(() {
-                                                  if (selected) {
-                                                    selectedTagUsers.removeWhere(
-                                                          (u) => u['user_id'].toString() == item['user_id'].toString(),
-                                                    );
-                                                    selectedTagUserIds.removeWhere(
-                                                          (id) => id == item['user_id'].toString(),
-                                                    );
-                                                  } else {
-                                                    selectedTagUsers.add(item);
-                                                    selectedTagUserIds.add(item['user_id'].toString());
-                                                  }
+                                                  selectedAssignToId =
+                                                      item['user_id']
+                                                          .toString();
+                                                  selectedAssignToName =
+                                                      item['user_name'];
                                                 });
-                                                dropdownSearchKey.currentState?.changeSelectedItems(selectedTagUsers);
+
+                                                assignedDropdownSearchKey
+                                                    .currentState
+                                                    ?.changeSelectedItem(item);
+                                                Navigator.pop(
+                                                  context,
+                                                ); // Close the dropdown
                                               },
                                               child: ListTile(
                                                 leading: Stack(
                                                   children: [
                                                     CircleAvatar(
                                                       radius: 22,
-                                                      backgroundColor: selected ? Colors.blue : Colors.grey.shade200,
-                                                      child: item['user_avatar'] == null
-                                                          ? Icon(
-                                                        Icons.person,
-                                                        color: selected ? Colors.white : Colors.grey.shade400,
-                                                        size: 27,
-                                                      )
-                                                          : null,
-                                                      backgroundImage: item['user_avatar'] != null
-                                                          ? NetworkImage(item['user_avatar'])
-                                                          : null,
+                                                      backgroundColor:
+                                                          selected
+                                                              ? Colors.blue
+                                                              : Colors
+                                                                  .grey
+                                                                  .shade200,
+                                                      child:
+                                                          item['user_avatar'] ==
+                                                                  null
+                                                              ? Icon(
+                                                                Icons.person,
+                                                                color:
+                                                                    selected
+                                                                        ? Colors
+                                                                            .white
+                                                                        : Colors
+                                                                            .grey
+                                                                            .shade400,
+                                                                size: 27,
+                                                              )
+                                                              : null,
+                                                      backgroundImage:
+                                                          item['user_avatar'] !=
+                                                                  null
+                                                              ? NetworkImage(
+                                                                item['user_avatar'],
+                                                              )
+                                                              : null,
                                                     ),
                                                     if (selected)
                                                       Positioned(
@@ -2357,13 +2218,20 @@ class _HomeState extends State<Home>
                                                         child: Container(
                                                           width: 16,
                                                           height: 16,
-                                                          decoration: const BoxDecoration(
-                                                            color: Colors.white,
-                                                            shape: BoxShape.circle,
-                                                          ),
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                                color:
+                                                                    Colors
+                                                                        .white,
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
                                                           child: const Icon(
                                                             Icons.check_circle,
-                                                            color: Color(0xFF1EC31A),
+                                                            color: Color(
+                                                              0xFF1EC31A,
+                                                            ),
                                                             size: 16,
                                                           ),
                                                         ),
@@ -2371,43 +2239,21 @@ class _HomeState extends State<Home>
                                                   ],
                                                 ),
                                                 title: Text(
-                                                  item['user_name'],
+                                                  item['user_name'] ?? '',
                                                   style: TextStyle(
-                                                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                                    color: Colors.black,
+                                                    fontWeight:
+                                                        selected
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                    color:
+                                                        selected
+                                                            ? Colors.blue
+                                                            : Colors.black,
                                                   ),
                                                 ),
                                               ),
                                             );
                                           },
-                                          checkBoxBuilder: (context, item, isDisabled, isSelected) => const SizedBox.shrink(),
-                                          containerBuilder: (context, popupWidget) {
-                                            return Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (selectedTagUsers.isNotEmpty)
-                                                  Padding(
-                                                    padding: const EdgeInsets.symmetric(
-                                                      horizontal: 16,
-                                                      vertical: 18,
-                                                    ),
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [],
-                                                    ),
-                                                  ),
-                                                Expanded(
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.only(bottom: 60),
-                                                    child: popupWidget,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                          constraints: BoxConstraints(
-                                            maxHeight: MediaQuery.of(context).size.height * 0.95,
-                                          ),
                                           searchFieldProps: TextFieldProps(
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 30,
@@ -2415,15 +2261,14 @@ class _HomeState extends State<Home>
                                             ),
                                             decoration: InputDecoration(
                                               hintText: "Search...",
-                                              prefixIcon: const Icon(Icons.search),
+                                              prefixIcon: Icon(Icons.search),
                                               border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        compareFn: (item, selectedItem) =>
-                                        item['user_id'].toString() == selectedItem['user_id'].toString(),
                                         decoratorProps: DropDownDecoratorProps(
                                           decoration: InputDecoration(
                                             hintStyle: const TextStyle(
@@ -2437,153 +2282,500 @@ class _HomeState extends State<Home>
                                                 color: Colors.grey.shade400,
                                                 width: 0.8,
                                               ),
-                                              borderRadius: BorderRadius.circular(10),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
                                                 color: Colors.grey.shade400,
                                                 width: 0.8,
                                               ),
-                                              borderRadius: BorderRadius.circular(10),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                             focusedBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
                                                 color: Colors.grey.shade500,
                                                 width: 0.8,
                                               ),
-                                              borderRadius: BorderRadius.circular(10),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
-                                            contentPadding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 14,
-                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 14,
+                                                ),
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 35),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 6.0),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xFFE6EEFB),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(30),
-                                            ),
+                              const SizedBox(height: 30),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        SvgPicture.asset(
+                                          AppImages.tagUserSvg,
+                                          color: AppColors.black,
+                                        ),
+                                        const SizedBox(width: 7),
+                                        Text(
+                                          "Tag User's for Notification",
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.black,
                                           ),
-                                          onPressed: () {
-                                            setModalState(() {
-                                              selectedTagUserIds.clear();
-                                              selectedTagUsers.clear();
-                                              isAssignToSelf = false;
-                                              selectedAssignToId = null;
-                                              selectedAssignToName = null;
-                                            });
-                                            dropdownSearchKey.currentState?.changeSelectedItems([]);
-                                            dropdownSearchKey.currentState?.clear();
-                                          },
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                "Clear",
-                                                style: GoogleFonts.lato(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w400,
-                                                  color: AppColors.gray,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                    DropdownSearch<
+                                      Map<String, dynamic>
+                                    >.multiSelection(
+                                      key: dropdownSearchKey,
+                                      items: (filter, _) async {
+                                        final filtered =
+                                            userList
+                                                .where(
+                                                  (user) => user['user_name']
+                                                      .toLowerCase()
+                                                      .contains(
+                                                        filter?.toLowerCase() ??
+                                                            '',
+                                                      ),
+                                                )
+                                                .toList();
+
+                                        final selectedIds =
+                                            selectedTagUsers
+                                                .map(
+                                                  (u) =>
+                                                      u['user_id'].toString(),
+                                                )
+                                                .toSet();
+
+                                        filtered.sort((a, b) {
+                                          final aSelected =
+                                              selectedIds.contains(
+                                                    a['user_id'].toString(),
+                                                  )
+                                                  ? 0
+                                                  : 1;
+                                          final bSelected =
+                                              selectedIds.contains(
+                                                    b['user_id'].toString(),
+                                                  )
+                                                  ? 0
+                                                  : 1;
+                                          return aSelected.compareTo(bSelected);
+                                        });
+
+                                        return filtered;
+                                      },
+                                      selectedItems: selectedTagUsers,
+                                      itemAsString: (user) => user['user_name'],
+                                      dropdownBuilder: (
+                                        context,
+                                        selectedItems,
+                                      ) {
+                                        return Wrap(
+                                          spacing: 6,
+                                          children:
+                                              selectedTagUsers.map((user) {
+                                                return Chip(
+                                                  label: Text(
+                                                    user['user_name'],
+                                                  ),
+                                                  onDeleted: () {
+                                                    setModalState(() {
+                                                      selectedTagUsers.remove(
+                                                        user,
+                                                      );
+                                                      selectedTagUserIds
+                                                          .removeWhere(
+                                                            (id) =>
+                                                                id ==
+                                                                user['user_id']
+                                                                    .toString(),
+                                                          );
+                                                    });
+                                                    dropdownSearchKey
+                                                        .currentState
+                                                        ?.changeSelectedItems(
+                                                          selectedTagUsers,
+                                                        );
+                                                  },
+                                                );
+                                              }).toList(),
+                                        );
+                                      },
+                                      onChanged: (
+                                        List<Map<String, dynamic>> users,
+                                      ) {
+                                        setModalState(() {
+                                          selectedTagUsers = users;
+                                          selectedTagUserIds =
+                                              users
+                                                  .map(
+                                                    (e) =>
+                                                        e['user_id'].toString(),
+                                                  )
+                                                  .where((id) => id.isNotEmpty)
+                                                  .toList();
+                                        });
+                                      },
+                                      popupProps: PopupPropsMultiSelection.modalBottomSheet(
+                                        showSearchBox: true,
+                                        onItemRemoved: (
+                                          selectedItems,
+                                          removedItem,
+                                        ) {
+                                          setModalState(() {
+                                            selectedTagUserIds.remove(
+                                              removedItem['user_id'].toString(),
+                                            );
+                                            selectedTagUsers.removeWhere(
+                                              (user) =>
+                                                  user['user_id'].toString() ==
+                                                  removedItem['user_id']
+                                                      .toString(),
+                                            );
+                                          });
+                                        },
+                                        onItemAdded: (
+                                          selectedItems,
+                                          addedItem,
+                                        ) {
+                                          setModalState(() {
+                                            selectedTagUserIds.add(
+                                              addedItem['user_id'].toString(),
+                                            );
+                                            selectedTagUsers.add(addedItem);
+                                          });
+                                        },
+                                        itemBuilder: (
+                                          context,
+                                          item,
+                                          isDisabled,
+                                          isSelected,
+                                        ) {
+                                          final bool selected =
+                                              selectedTagUserIds.contains(
+                                                item['user_id'].toString(),
+                                              );
+
+                                          return InkWell(
+                                            onTap: () {
+                                              setModalState(() {
+                                                if (selected) {
+                                                  selectedTagUsers.removeWhere(
+                                                    (u) =>
+                                                        u['user_id']
+                                                            .toString() ==
+                                                        item['user_id']
+                                                            .toString(),
+                                                  );
+                                                  selectedTagUserIds
+                                                      .removeWhere(
+                                                        (id) =>
+                                                            id ==
+                                                            item['user_id']
+                                                                .toString(),
+                                                      );
+                                                } else {
+                                                  selectedTagUsers.add(item);
+                                                  selectedTagUserIds.add(
+                                                    item['user_id'].toString(),
+                                                  );
+                                                }
+                                              });
+                                              dropdownSearchKey.currentState
+                                                  ?.changeSelectedItems(
+                                                    selectedTagUsers,
+                                                  );
+                                            },
+                                            child: ListTile(
+                                              leading: Stack(
+                                                children: [
+                                                  CircleAvatar(
+                                                    radius: 22,
+                                                    backgroundColor:
+                                                        selected
+                                                            ? Colors.blue
+                                                            : Colors
+                                                                .grey
+                                                                .shade200,
+                                                    child:
+                                                        item['user_avatar'] ==
+                                                                null
+                                                            ? Icon(
+                                                              Icons.person,
+                                                              color:
+                                                                  selected
+                                                                      ? Colors
+                                                                          .white
+                                                                      : Colors
+                                                                          .grey
+                                                                          .shade400,
+                                                              size: 27,
+                                                            )
+                                                            : null,
+                                                    backgroundImage:
+                                                        item['user_avatar'] !=
+                                                                null
+                                                            ? NetworkImage(
+                                                              item['user_avatar'],
+                                                            )
+                                                            : null,
+                                                  ),
+                                                  if (selected)
+                                                    Positioned(
+                                                      top: -2,
+                                                      right: -2,
+                                                      child: Container(
+                                                        width: 16,
+                                                        height: 16,
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                              color:
+                                                                  Colors.white,
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons.check_circle,
+                                                          color: Color(
+                                                            0xFF1EC31A,
+                                                          ),
+                                                          size: 16,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              title: Text(
+                                                item['user_name'],
+                                                style: TextStyle(
+                                                  fontWeight:
+                                                      selected
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                  color: Colors.black,
                                                 ),
                                               ),
-                                              Icon(
-                                                Icons.clear,
-                                                size: 18,
-                                                color: AppColors.gray,
+                                            ),
+                                          );
+                                        },
+                                        checkBoxBuilder:
+                                            (
+                                              context,
+                                              item,
+                                              isDisabled,
+                                              isSelected,
+                                            ) => const SizedBox.shrink(),
+                                        containerBuilder: (
+                                          context,
+                                          popupWidget,
+                                        ) {
+                                          return Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (selectedTagUsers.isNotEmpty)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 18,
+                                                      ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [],
+                                                  ),
+                                                ),
+                                              Expanded(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        bottom: 60,
+                                                      ),
+                                                  child: popupWidget,
+                                                ),
                                               ),
                                             ],
+                                          );
+                                        },
+                                        constraints: BoxConstraints(
+                                          maxHeight:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.95,
+                                        ),
+                                        searchFieldProps: TextFieldProps(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 30,
+                                            horizontal: 17,
+                                          ),
+                                          decoration: InputDecoration(
+                                            hintText: "Search...",
+                                            prefixIcon: const Icon(
+                                              Icons.search,
+                                            ),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.appBar,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(30),
+                                      compareFn:
+                                          (item, selectedItem) =>
+                                              item['user_id'].toString() ==
+                                              selectedItem['user_id']
+                                                  .toString(),
+                                      decoratorProps: DropDownDecoratorProps(
+                                        decoration: InputDecoration(
+                                          hintStyle: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w300,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                          hintText: AppStrings.placeHolder,
+                                          border: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade400,
+                                              width: 0.8,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
                                             ),
                                           ),
-                                          onPressed: () async {
-                                            final prefss = SharedPref();
-                                            final userData = await prefss.read(SharedPrefConstant().kUserData);
-                                            final currentUserId = userData?['id']?.toString();
-
-                                            // 🔹 Validation
-                                            if (!isAssignToSelf && (selectedAssignToId == null || selectedAssignToId!.isEmpty)) {
-                                              CustomSnackBar.errorSnackBar(context, "⚠️ Please select Assign To");
-                                              return;
-                                            }
-
-                                            // 🔹 Save to controller
-                                            if (isAssignToSelf) {
-                                              if (currentUserId != null) {
-                                                taskDetail.selectedAssignToUserId = currentUserId;
-                                              }
-                                            } else {
-                                              taskDetail.selectedAssignToUserId = selectedAssignToId;
-                                            }
-
-                                            taskDetail.taggedUsers = selectedTagUserIds;
-                                            taskDetail.taggedUserDetails = selectedTagUsers;
-
-                                            debugPrint("✅ Saved to controller:");
-                                            debugPrint("➡ Assign To: ${taskDetail.selectedAssignToUserId}");
-                                            debugPrint("➡ Tagged Users: ${taskDetail.taggedUsers}");
-                                            debugPrint("➡ Tagged User Details: ${taskDetail.taggedUserDetails.map((u) => u['user_name']).toList()}");
-
-                                            Navigator.pop(context);
-                                            _isAssignToSheetOpen = false;
-                                            _currentFormStep = 4;
-                                          },
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                "Apply",
-                                                style: GoogleFonts.lato(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w400,
-                                                  color: AppColors.white,
-                                                ),
-                                              ),
-                                              Icon(
-                                                Icons.arrow_forward,
-                                                size: 18,
-                                                color: AppColors.white,
-                                              ),
-                                            ],
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade400,
+                                              width: 0.8,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade500,
+                                              width: 0.8,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 14,
+                                              ),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 60),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 35),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10.0),
+                                child: bottomButton(
+                                  title: 'Apply',
+                                  subtitle: 'Back',
+                                  icon: Icons.arrow_forward,
+                                  icons: Icons.arrow_back,
+                                  padding: 0.0,
+                                  onPress: () async {
+                                    final prefss = SharedPref();
+                                    final userData = await prefss.read(
+                                      SharedPrefConstant().kUserData,
+                                    );
+                                    final currentUserId =
+                                        userData?['id']?.toString();
+
+                                    // 🔹 Validation
+                                    if (!isAssignToSelf &&
+                                        (selectedAssignToId == null ||
+                                            selectedAssignToId!.isEmpty)) {
+                                      CustomSnackBar.errorSnackBar(
+                                        context,
+                                        "⚠️ Please select Assign To",
+                                      );
+                                      return;
+                                    }
+
+                                    // 🔹 Save to controller
+                                    if (isAssignToSelf) {
+                                      if (currentUserId != null) {
+                                        taskDetail.selectedAssignToUserId =
+                                            currentUserId;
+                                      }
+                                    } else {
+                                      taskDetail.selectedAssignToUserId =
+                                          selectedAssignToId;
+                                    }
+
+                                    taskDetail.taggedUsers = selectedTagUserIds;
+                                    taskDetail.taggedUserDetails =
+                                        selectedTagUsers;
+
+                                    debugPrint("✅ Saved to controller:");
+                                    debugPrint(
+                                      "➡ Assign To: ${taskDetail.selectedAssignToUserId}",
+                                    );
+                                    debugPrint(
+                                      "➡ Tagged Users: ${taskDetail.taggedUsers}",
+                                    );
+                                    debugPrint(
+                                      "➡ Tagged User Details: ${taskDetail.taggedUserDetails.map((u) => u['user_name']).toList()}",
+                                    );
+
+                                    Navigator.pop(context);
+                                    _isAssignToSheetOpen = false;
+                                    _currentFormStep = 100; // Final step marker
+                                  },
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    _isAssignToSheetOpen = false;
+                                    _currentFormStep = 2; // Return to Date step
+
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          _showProjectBottomSheetDate(
+                                            parentContext,
+                                          );
+                                        });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 60),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              );
-            },
-          );
-        }).then((value) {
+              ),
+            );
+          },
+        );
+      },
+    ).then((value) {
       _isAssignToSheetOpen = false;
     });
   }
@@ -2598,7 +2790,7 @@ Widget _buildTab(String iconPath, String label, Color color) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset(iconPath, height: 24, width: 24, color: color),
+            SvgPicture.asset(iconPath, height: 22, width: 22, color: color),
             const SizedBox(height: 6),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 80),

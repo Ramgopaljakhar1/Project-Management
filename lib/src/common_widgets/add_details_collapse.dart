@@ -87,20 +87,20 @@ Widget addDetailsCollapse({
               RichText(
                 text: TextSpan(
                   text: title,
-                  style: TextStyle(
-                    fontSize: 15,
+                  style: GoogleFonts.lato(
+                    color: AppColors.black,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: titleColor ?? Colors.black,
                   ),
-                  // children: const [
-                  //   TextSpan(
-                  //     text: ' *',
-                  //     style: TextStyle(
-                  //       color: Colors.red,
-                  //       fontWeight: FontWeight.bold,fontSize: 19
-                  //     ),
-                  //   ),
-                  // ],
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,fontSize: 19
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -182,7 +182,7 @@ Widget addDetailsCollapse({
               ),
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height:22),
 
             /// ✅ Project Name Dropdown
             // customDropdown(
@@ -204,14 +204,26 @@ Widget addDetailsCollapse({
                     color: Colors.black,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Project Name',
-                    style: GoogleFonts.lato(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                  RichText(
+                    text: TextSpan(
+                      text: 'Project Name ',
+                      style: GoogleFonts.lato(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                      children: const [
+                        TextSpan(
+                          text: '*',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
@@ -345,14 +357,26 @@ Widget addDetailsCollapse({
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
-                    child: Text(
-                      AppStrings.priority,
-                      style: GoogleFonts.lato(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: titleColor ?? Colors.black,
+                    child: RichText(
+                      text: TextSpan(
+                        text: AppStrings.priority + " ",
+                        style: GoogleFonts.lato(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: titleColor ?? Colors.black,
+                        ),
+                        children: const [
+                          TextSpan(
+                            text: '*',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    )
                   ),
                   const SizedBox(height: 12),
                   Row(

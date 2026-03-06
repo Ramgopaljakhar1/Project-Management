@@ -163,7 +163,7 @@ class _GetDelayedScreenState extends State<GetDelayedScreen> {
                 _fetchDataWithTimeout();  // ✅ Re-fetch data
               },
             )
-                :  Center(child: buildShimmerLoader());
+                :  Center(child:  buildAssignedTaskScreenShimmer(context));
           }
 
           if (filteredTasks.isEmpty) {

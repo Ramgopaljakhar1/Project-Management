@@ -12,7 +12,7 @@ import '../services/constants/api_constants.dart';
 import '../utils/img.dart';
 import '../utils/shared_pref_constants.dart';
 import '../utils/shared_preference.dart';
-import 'package:flutter_upgrade_version/models/package_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 
 class CustomDrawer extends StatefulWidget {
@@ -38,6 +38,16 @@ class _CustomDrawerState extends State<CustomDrawer> {
         final controller = Provider.of<MyTaskController>(context, listen: false);
         controller.fetchMyTasks(userId: userId);
       }
+    });
+    getAppVersion();
+  }
+
+
+  Future<void> getAppVersion() async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+    setState(() {
+      appVersion = packageInfo.version;
     });
   }
   Future<void> loadUserData() async {
@@ -187,7 +197,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                     padding: const EdgeInsets.all(16.0),
                     child: Center(
                       child: Text(
-                        'v.1.3',
+                        "v.$appVersion",
                         style: const TextStyle(color: Colors.white54),
                       ),
                     ),

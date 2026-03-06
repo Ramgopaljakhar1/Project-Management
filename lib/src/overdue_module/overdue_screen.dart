@@ -202,7 +202,7 @@ class _OverdueScreenState extends State<OverdueScreen> {
                   : null,
           body:
               isLoading
-                  ? Center(child: buildShimmerLoader())
+                  ? Center(child: buildAssignedTaskScreenShimmer(context))
                   : controller.overDue.isEmpty
                   ? AppStateScreen(
                     showAppBar: false,

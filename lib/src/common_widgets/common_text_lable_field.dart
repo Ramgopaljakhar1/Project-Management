@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:project_management/src/utils/colors.dart';
 import '../utils/img.dart';
 
@@ -64,11 +65,12 @@ Widget textLabelFormField({
                 onTap: onTap,
                 obscureText: obscureText,
                 onChanged: onChanged, // ✅ onChanged used here
-                style: TextStyle(
+                style:  GoogleFonts.lato(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: titleColor ?? Colors.black,
                 ),
+
                 decoration: InputDecoration(
                   hintText: hintText,
                   hintStyle: const TextStyle(

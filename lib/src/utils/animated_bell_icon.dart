@@ -83,7 +83,7 @@ class _AnimatedBellIconState extends State<AnimatedBellIcon>
             child: const Icon(
               Icons.notifications_active,
               color: Colors.black87,
-              size: 28,
+              size: 22,
             ),
           ),
         ),

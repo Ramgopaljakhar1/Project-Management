@@ -91,18 +91,19 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
     if (widget.taskData['task_docs'] != null &&
         widget.taskData['task_docs'] != '') {
       _uploadedFileUrl = widget.taskData['task_docs'];
-
     }
-
 
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
     );
+    final controller = Provider.of<ViewMyTaskController>(
+      context,
+      listen: false,
+    );
+    controller.addListener(_onControllerUpdate);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ViewMyTaskController>(
-        context,
-        listen: false,
-      ).initializeAndFetchTask(taskId!);
+      controller.initializeAndFetchTask(taskId!);
     });
     // Initialize actual dates and hours if they exist
     if (widget.taskData['actual_est_start_date'] != null &&
@@ -370,7 +371,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
           _uploadedFileUrl != null &&
           _uploadedFileUrl!.isNotEmpty) {
         try {
-          debugPrint('🔄 Converting existing file URL to base64: $_uploadedFileUrl');
+          debugPrint(
+            '🔄 Converting existing file URL to base64: $_uploadedFileUrl',
+          );
           final fileBytes = await _downloadFileFromUrl(_uploadedFileUrl!);
           if (fileBytes != null) {
             // Create a temporary file
@@ -421,45 +424,39 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
   }
 
   void _initializeDataFromTask() {
-   final taskcontroller = Provider.of<ViewMyTaskController>(
+    final taskcontroller = Provider.of<ViewMyTaskController>(
       context,
       listen: false,
     );
 
-    if (widget.taskData['actual_est_start_date'] != null &&
-        widget.taskData['actual_est_end_date'] != null) {
+    final task = taskcontroller.task ?? widget.taskData;
+
+    if (task['actual_est_start_date'] != null &&
+        task['actual_est_end_date'] != null &&
+        task['actual_est_start_date'].toString().isNotEmpty &&
+        task['actual_est_end_date'].toString().isNotEmpty) {
       try {
-        _rangeStart = DateTime.parse(widget.taskData['actual_est_start_date']);
-        _rangeEnd = DateTime.parse(widget.taskData['actual_est_end_date']);
+        _rangeStart = DateTime.parse(task['actual_est_start_date']);
+        _rangeEnd = DateTime.parse(task['actual_est_end_date']);
         _updateDateRangeText();
       } catch (e) {
         debugPrint("Error parsing actual dates: $e");
       }
     }
 
-    if (widget.taskData['actual_est_hrs'] != null) {
-      actualHoursController.text = widget.taskData['actual_est_hrs'].toString();
+    if (task['actual_est_hrs'] != null &&
+        task['actual_est_hrs'].toString().isNotEmpty) {
+      actualHoursController.text = task['actual_est_hrs'].toString();
+      _updateDateRangeText();
     }
 
     // FIX: Always update the remark controller with current data
-    if (widget.taskData['assign_to_remark'] != null &&
-        widget.taskData['assign_to_remark'].toString().isNotEmpty) {
-
-      // ✅ 1️⃣ Widget se remark mila → wahi show karo
-      remark.text = widget.taskData['assign_to_remark'].toString();
-
-    } else if (taskcontroller.task?['assign_to_remark'] != null &&
-        taskcontroller.task!['assign_to_remark'].toString().isNotEmpty) {
-
-      // ✅ 2️⃣ Widget se nahi mila → task list se show karo
-      remark.text = taskcontroller.task!['assign_to_remark'].toString();
-
+    if (task['assign_to_remark'] != null &&
+        task['assign_to_remark'].toString().isNotEmpty) {
+      remark.text = task['assign_to_remark'].toString();
     } else {
-
-      // ✅ 3️⃣ Dono jagah se nahi mila → clear
       remark.clear();
     }
-
   }
 
   Future<Uint8List?> _downloadFileFromUrl(String url) async {
@@ -481,7 +478,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
         );
         return response.bodyBytes;
       } else {
-        debugPrint('❌ Failed to download file, status code: ${response.statusCode}');
+        debugPrint(
+          '❌ Failed to download file, status code: ${response.statusCode}',
+        );
         return null;
       }
     } catch (e) {
@@ -489,20 +488,40 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
       return null;
     }
   }
-  void _navigateToTicketDetails(String? ticketId,String taskId){
-    if(ticketId == null || ticketId == '-' || ticketId.isEmpty){
+
+  void _onControllerUpdate() {
+    final controller = Provider.of<ViewMyTaskController>(
+      context,
+      listen: false,
+    );
+    if (!controller.isLoading && controller.task != null) {
+      _initializeDataFromTask();
+    }
+  }
+
+  void _navigateToTicketDetails(String? ticketId, String taskId) {
+    if (ticketId == null || ticketId == '-' || ticketId.isEmpty) {
       CustomSnackBar.errorSnackBar(context, "'Ticket ID not available");
       return;
     }
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ViewTicketIdDetails(ticketId:ticketId,taskId:taskId,),
+        builder:
+            (context) =>
+                ViewTicketIdDetails(ticketId: ticketId, taskId: taskId),
       ),
     );
   }
+
   @override
   void dispose() {
+    final controller = Provider.of<ViewMyTaskController>(
+      context,
+      listen: false,
+    );
+    controller.removeListener(_onControllerUpdate);
+
     actualHoursController.removeListener(updateActualDays);
     _dateRangeController.dispose();
     actualHoursController.dispose();
@@ -518,16 +537,16 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
         if (controller.isLoading) {
           return Scaffold(
             appBar: customAppBar(context, title: 'Loading...', showBack: true),
-            body: Center(child: buildShimmerLoader()),
+            body: Center(child: buildEditTaskDetailsShimmer(context)),
           );
         }
 
         final task = controller.task;
-      //  debugPrint('task docs re : ${task!["task_docs_re"]}');
+        //  debugPrint('task docs re : ${task!["task_docs_re"]}');
         _uploadedFiles_re = task!["task_docs_re"];
 
         debugPrint('task docs re-- : ${_uploadedFiles_re}');
-        debugPrint('assign_to_remark-- : ${ task["assign_to_remark"]}');
+        debugPrint('assign_to_remark-- : ${task["assign_to_remark"]}');
         if (task == null) {
           return Scaffold(
             backgroundColor: AppColors.white,
@@ -578,9 +597,12 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                           buildRichText('Task ID', '${task['id'] ?? '-'}'),
                           const SizedBox(width: 13),
                           GestureDetector(
-                            onTap:() {
-                              _navigateToTicketDetails(task['ticket_id'].toString(),task['id'].toString());
-                             // debugPrint('object....');
+                            onTap: () {
+                              _navigateToTicketDetails(
+                                task['ticket_id'].toString(),
+                                task['id'].toString(),
+                              );
+                              // debugPrint('object....');
                             },
                             child: buildRichText(
                               'Ticket ID',
@@ -592,7 +614,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                       const SizedBox(height: 18),
                       // Task Name Field
                       textLabelFormField(
-                        controller:TextEditingController(text: task['task_name'] ?? ''),
+                        controller: TextEditingController(
+                          text: task['task_name'] ?? '',
+                        ),
                         readOnly: true,
                         img: AppImages.addTaskSvg,
                         taskName: 'Task Name',
@@ -703,8 +727,6 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
 
                       const SizedBox(height: 18),
 
-                      // Replace your existing "Actual Days Taken" and "Actual Hours Taken" Row widgets with:
-
                       /// Actual Days Taken
                       // Row(
                       //   children: [
@@ -797,7 +819,7 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                 '${DateFormat('d MMMM yyyy').format(DateTime.parse(task['actual_est_end_date']))}'
                                 '  |  '
                                 '${task['actual_est_hrs'] ?? '-'} Hours',
-                                style: const TextStyle(fontSize: 14,),
+                                style: const TextStyle(fontSize: 14),
                               ),
                             )
                           else
@@ -992,101 +1014,119 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                       const SizedBox(height: 22),
 
                       if (_uploadedFile != null || _uploadedFiles_re != null)
-                          Container(
-              height: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(
-                  color: Colors.grey.shade400,
-                  width: 0.8,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    _uploadedFile != null
-                        ? Image.asset(AppImages.pdf, width: 22, height: 22)
-                        : (_uploadedFiles_re != null
-                        ? Image.network(
-                      _uploadedFiles_re!,
-                      width: 22,
-                      height: 22,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.broken_image, size: 22),
-                    )
-                        : Icon(Icons.insert_drive_file, size: 22)),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Uploaded File",
-                            style: GoogleFonts.lato(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.gray,
+                        Container(
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(
+                              color: Colors.grey.shade400,
+                              width: 0.8,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
-                          FutureBuilder<int>(
-                            future: _uploadedFile != null
-                                ? _getFileSize()
-                                : Future.value(0),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData && _uploadedFile != null) {
-                                final sizeMB =
-                                (snapshot.data! / (1024 * 1024)).toStringAsFixed(2);
-                                return Text(
-                                  'Size: $sizeMB MB',
-                                  style: GoogleFonts.lato(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.gray,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                _uploadedFile != null
+                                    ? Image.asset(
+                                      AppImages.pdf,
+                                      width: 22,
+                                      height: 22,
+                                    )
+                                    : (_uploadedFiles_re != null
+                                        ? Image.network(
+                                          _uploadedFiles_re!,
+                                          width: 22,
+                                          height: 22,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Icon(
+                                                    Icons.broken_image,
+                                                    size: 22,
+                                                  ),
+                                        )
+                                        : Icon(
+                                          Icons.insert_drive_file,
+                                          size: 22,
+                                        )),
+                                const SizedBox(width: 11),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Uploaded File",
+                                        style: GoogleFonts.lato(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: AppColors.gray,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                      FutureBuilder<int>(
+                                        future:
+                                            _uploadedFile != null
+                                                ? _getFileSize()
+                                                : Future.value(0),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData &&
+                                              _uploadedFile != null) {
+                                            final sizeMB = (snapshot.data! /
+                                                    (1024 * 1024))
+                                                .toStringAsFixed(2);
+                                            return Text(
+                                              'Size: $sizeMB MB',
+                                              style: GoogleFonts.lato(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                                color: AppColors.gray,
+                                              ),
+                                            );
+                                          } else if (_uploadedFiles_re !=
+                                              null) {
+                                            return const Text(
+                                              'Remote file',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          } else {
+                                            return const Text('Size: --');
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                );
-                              } else if (_uploadedFiles_re != null) {
-                                return const Text(
-                                  'Remote file',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                );
-                              } else {
-                                return const Text('Size: --');
-                              }
-                            },
+                                ),
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: () async {
+                                    if (_uploadedFile != null) {
+                                      final result = await OpenFile.open(
+                                        _uploadedFile!.path,
+                                      );
+                                      debugPrint(
+                                        "Open result: ${result.message}",
+                                      );
+                                    } else if (_uploadedFiles_re != null) {
+                                      _showImageFullScreen(
+                                        context,
+                                        _uploadedFiles_re!,
+                                      );
+                                    }
+                                  },
+                                  child: SvgPicture.asset(AppImages.viewSvg),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () async {
-                        if (_uploadedFile != null) {
-                          final result = await OpenFile.open(_uploadedFile!.path);
-                          debugPrint("Open result: ${result.message}");
-                        } else if (_uploadedFiles_re != null) {
-                          _showImageFullScreen(context, _uploadedFiles_re!);
-                        }
-                      },
-                      child: SvgPicture.asset(AppImages.viewSvg),
-                    ),
+                        ),
 
-
-
-
-                  ],
-                ),
-              ),
-            ),
-
-
-              const SizedBox(height: 22),
+                      const SizedBox(height: 22),
                       //
                       isLoading
                           ? commonLoader(color: AppColors.blue, size: 28)
@@ -1266,8 +1306,12 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                   builder: (context, setModalState) {
                     void _updateRangeText() {
                       if (tempRangeStart != null && tempRangeEnd != null) {
-                        final startStr = DateFormat('MMM dd, yyyy').format(tempRangeStart!);
-                        final endStr = DateFormat('MMM dd, yyyy').format(tempRangeEnd!);
+                        final startStr = DateFormat(
+                          'MMM dd, yyyy',
+                        ).format(tempRangeStart!);
+                        final endStr = DateFormat(
+                          'MMM dd, yyyy',
+                        ).format(tempRangeEnd!);
                         _dateRangeController.text = '$startStr - $endStr';
                       } else {
                         _dateRangeController.clear();
@@ -1292,7 +1336,11 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                     // Check if a date is selectable (must be on or after estimated start date)
                     bool isDateSelectable(DateTime date) {
                       // Remove time part for comparison
-                      final dateOnly = DateTime(date.year, date.month, date.day);
+                      final dateOnly = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                      );
                       final firstDayOnly = DateTime(
                         firstSelectableDay.year,
                         firstSelectableDay.month,
@@ -1309,7 +1357,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                          SizedBox(
+                            height: MediaQuery.of(context).viewInsets.bottom,
+                          ),
 
                           /// Header with validation info
                           Row(
@@ -1365,10 +1415,14 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
 
                                 // Check if date is selectable (must be on or after estimated start date)
                                 if (!isDateSelectable(selectedDay)) {
-                                  final formattedDate = DateFormat('d MMMM yyyy').format(firstSelectableDay);
+                                  final formattedDate = DateFormat(
+                                    'd MMMM yyyy',
+                                  ).format(firstSelectableDay);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Please select a date on or after $formattedDate'),
+                                      content: Text(
+                                        'Please select a date on or after $formattedDate',
+                                      ),
                                       backgroundColor: Colors.red,
                                       duration: const Duration(seconds: 2),
                                     ),
@@ -1376,16 +1430,20 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                   return;
                                 }
 
-                                if (_rangeSelectionMode == RangeSelectionMode.toggledOn &&
+                                if (_rangeSelectionMode ==
+                                        RangeSelectionMode.toggledOn &&
                                     tempRangeStart != null &&
                                     tempRangeEnd == null) {
-
                                   // Check if selected end date is selectable
                                   if (!isDateSelectable(selectedDay)) {
-                                    final formattedDate = DateFormat('d MMMM yyyy').format(firstSelectableDay);
+                                    final formattedDate = DateFormat(
+                                      'd MMMM yyyy',
+                                    ).format(firstSelectableDay);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('End date must be on or after $formattedDate'),
+                                        content: Text(
+                                          'End date must be on or after $formattedDate',
+                                        ),
                                         backgroundColor: Colors.red,
                                         duration: const Duration(seconds: 2),
                                       ),
@@ -1414,7 +1472,8 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                   tempRangeEnd = null;
                                 }
 
-                                _rangeSelectionMode = RangeSelectionMode.toggledOn;
+                                _rangeSelectionMode =
+                                    RangeSelectionMode.toggledOn;
                                 _updateRangeText();
                               });
                             },
@@ -1483,7 +1542,7 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                   horizontal: 16,
                                   vertical: 12,
                                 ),
-                                width:double.infinity,
+                                width: double.infinity,
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: Colors.grey.shade300,
@@ -1498,9 +1557,11 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                       : 'No date range selected',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: tempRangeStart != null && tempRangeEnd != null
-                                        ? Colors.black87
-                                        : Colors.grey[600],
+                                    color:
+                                        tempRangeStart != null &&
+                                                tempRangeEnd != null
+                                            ? Colors.black87
+                                            : Colors.grey[600],
                                   ),
                                 ),
                               ),
@@ -1527,9 +1588,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                               ),
                               SizedBox(height: 8),
                               TextFormField(
+                                maxLength: 2,
                                 controller: actualHoursController,
                                 keyboardType: TextInputType.number,
-                                maxLength: 2,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
@@ -1578,7 +1639,9 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                   onPressed: () {
                                     Navigator.pop(context);
@@ -1611,14 +1674,21 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                   onPressed: () {
                                     // Validate before closing
-                                    if (tempRangeStart == null || tempRangeEnd == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                    if (tempRangeStart == null ||
+                                        tempRangeEnd == null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
-                                          content: Text('Please select a date range'),
+                                          content: Text(
+                                            'Please select a date range',
+                                          ),
                                           backgroundColor: Colors.red,
                                         ),
                                       );
@@ -1626,11 +1696,18 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
                                     }
 
                                     // Validate dates are on or after estimated start date
-                                    if (!isDateSelectable(tempRangeStart!) || !isDateSelectable(tempRangeEnd!)) {
-                                      final formattedDate = DateFormat('d MMMM yyyy').format(firstSelectableDay);
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                    if (!isDateSelectable(tempRangeStart!) ||
+                                        !isDateSelectable(tempRangeEnd!)) {
+                                      final formattedDate = DateFormat(
+                                        'd MMMM yyyy',
+                                      ).format(firstSelectableDay);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
-                                          content: Text('Selected dates must be on or after $formattedDate'),
+                                          content: Text(
+                                            'Selected dates must be on or after $formattedDate',
+                                          ),
                                           backgroundColor: Colors.red,
                                         ),
                                       );
@@ -1682,33 +1759,37 @@ class _ViewMyTaskScreenState extends State<ViewMyTaskScreen> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: EdgeInsets.zero,
-        child: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: InteractiveViewer(
-            child: Center(
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) =>
-                const Center(
-                  child: Icon(Icons.broken_image, size: 50, color: Colors.white),
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.black,
+            insetPadding: EdgeInsets.zero,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: InteractiveViewer(
+                child: Center(
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                    errorBuilder:
+                        (context, error, stackTrace) => const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                        ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
     );
   }
+
   Future<int> _getFileSize() async {
     if (_uploadedFile != null) {
       return await _uploadedFile!.length();
